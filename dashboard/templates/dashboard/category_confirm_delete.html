@@ -1,0 +1,37 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Delete Category - Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">🗑️ Delete Category</h1>
+</div>
+
+<div class="form-container">
+    {% if product_total %}
+        <div class="alert alert-error">
+            <strong>{{ category.name }}</strong> still has {{ product_total }} product{{ product_total|pluralize }}.
+            Move them to another category or delete them first.
+        </div>
+        <div class="form-buttons">
+            <a href="{% url 'dashboard:products_list' %}?category={{ category.slug }}" class="btn">
+                View these products
+            </a>
+            <a href="{% url 'dashboard:categories_list' %}" class="btn btn-secondary">Back</a>
+        </div>
+    {% else %}
+        <p style="margin-bottom: 1rem;">
+            Delete the category <strong>{{ category.icon }} {{ category.name }}</strong>?
+            Any process stages attached to it will be removed too. This cannot be undone.
+        </p>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-buttons">
+                <button type="submit" class="btn btn-danger">Yes, delete it</button>
+                <a href="{% url 'dashboard:categories_list' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    {% endif %}
+</div>
+{% endblock %}

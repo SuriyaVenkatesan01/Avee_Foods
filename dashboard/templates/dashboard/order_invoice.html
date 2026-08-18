@@ -1,0 +1,223 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice {{ order.order_number }} - Avee Foods</title>
+    <link rel="icon" href="{% static 'img/favicon.ico' %}" sizes="any">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+            line-height: 1.55;
+            background: #f5f5f5;
+            padding: 1.5rem;
+        }
+
+        .sheet {
+            max-width: 820px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 2.5rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+        }
+
+        .invoice-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            border-bottom: 3px solid #1f4d2b;
+            padding-bottom: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .brand { display: flex; align-items: center; gap: 0.75rem; }
+        .brand img { width: 60px; height: 60px; border-radius: 50%; }
+        .brand h1 { font-size: 1.5rem; color: #1f4d2b; }
+        .brand span { font-size: 0.85rem; color: #7f8c8d; }
+
+        .invoice-meta { text-align: right; font-size: 0.9rem; }
+        .invoice-meta h2 { font-size: 1.15rem; color: #1f4d2b; margin-bottom: 0.35rem; }
+
+        .party-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .party h3 {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #7f8c8d;
+            margin-bottom: 0.4rem;
+        }
+
+        table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
+
+        th {
+            background: #1f4d2b;
+            color: #fff;
+            text-align: left;
+            padding: 0.65rem 0.75rem;
+            font-size: 0.85rem;
+        }
+
+        td { padding: 0.65rem 0.75rem; border-bottom: 1px solid #ecf0f1; font-size: 0.92rem; }
+
+        th.num, td.num { text-align: right; }
+
+        .totals { max-width: 320px; margin-left: auto; }
+
+        .totals div {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.3rem 0;
+        }
+
+        .totals .grand {
+            border-top: 2px solid #1f4d2b;
+            margin-top: 0.4rem;
+            padding-top: 0.6rem;
+            font-weight: bold;
+            font-size: 1.15rem;
+        }
+
+        .foot {
+            margin-top: 2rem;
+            border-top: 1px solid #ecf0f1;
+            padding-top: 1rem;
+            font-size: 0.85rem;
+            color: #7f8c8d;
+        }
+
+        .actions { max-width: 820px; margin: 0 auto 1rem; display: flex; gap: 0.5rem; }
+
+        .btn {
+            padding: 0.6rem 1.2rem;
+            background: #e0a106;
+            color: #24301f;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+
+        .btn-secondary { background: #3a6b45; color: #fff; }
+
+        @media print {
+            body { background: #fff; padding: 0; }
+            .sheet { box-shadow: none; padding: 0; max-width: none; }
+            .actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="actions">
+        <button type="button" class="btn" onclick="window.print()">🖨️ Print</button>
+        <a href="{% url 'dashboard:order_detail' order.order_number %}" class="btn btn-secondary">← Back to order</a>
+    </div>
+
+    <div class="sheet">
+        <div class="invoice-head">
+            <div class="brand">
+                <img src="{% static 'img/logo-192.png' %}" alt="Avee Foods logo" width="192" height="192">
+                <div>
+                    <h1>{{ store.name }}</h1>
+                    <span>{{ store.address }}</span><br>
+                    <span>{{ store.support_phone }} · {{ store.support_email }}</span><br>
+                    <span>FSSAI: {{ store.fssai_number }} · GSTIN: {{ store.gst_number }}</span>
+                </div>
+            </div>
+
+            <div class="invoice-meta">
+                <h2>Invoice / Packing Slip</h2>
+                <strong>{{ order.order_number }}</strong><br>
+                {{ order.placed_at|date:"d M Y, g:i a" }}<br>
+                {{ order.get_payment_method_display }} — {{ order.get_payment_status_display }}<br>
+                Status: {{ order.get_status_display }}
+            </div>
+        </div>
+
+        <div class="party-grid">
+            <div class="party">
+                <h3>Deliver to</h3>
+                <strong>{{ order.full_name }}</strong><br>
+                {{ order.address_line1 }}<br>
+                {% if order.address_line2 %}{{ order.address_line2 }}<br>{% endif %}
+                {% if order.landmark %}Near {{ order.landmark }}<br>{% endif %}
+                {{ order.city }}{% if order.district %}, {{ order.district }}{% endif %}<br>
+                {{ order.state }} - {{ order.pincode }}<br>
+                📞 {{ order.phone }}{% if order.alt_phone %} / {{ order.alt_phone }}{% endif %}
+                {% if order.email %}<br>{{ order.email }}{% endif %}
+            </div>
+
+            <div class="party">
+                <h3>Shipment</h3>
+                {% if order.courier_name %}Courier: {{ order.courier_name }}<br>{% endif %}
+                {% if order.tracking_number %}Tracking: {{ order.tracking_number }}<br>{% endif %}
+                {% if order.expected_delivery %}Expected: {{ order.expected_delivery|date:"d M Y" }}<br>{% endif %}
+                {% if not order.courier_name and not order.tracking_number %}
+                    Not dispatched yet.
+                {% endif %}
+                {% if order.delivery_notes %}
+                    <br><br><strong>Note:</strong> {{ order.delivery_notes }}
+                {% endif %}
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Product</th>
+                    <th>Pack</th>
+                    <th>SKU</th>
+                    <th class="num">Rate</th>
+                    <th class="num">Qty</th>
+                    <th class="num">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.items.all %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ item.product_name }}</td>
+                        <td>{{ item.variant_label }}</td>
+                        <td>{{ item.sku }}</td>
+                        <td class="num">₹{{ item.unit_price }}</td>
+                        <td class="num">{{ item.quantity }}</td>
+                        <td class="num">₹{{ item.line_total }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="totals">
+            <div><span>Subtotal</span><span>₹{{ order.subtotal }}</span></div>
+            <div><span>Delivery</span><span>₹{{ order.shipping_fee }}</span></div>
+            {% if order.discount %}
+                <div><span>Discount</span><span>− ₹{{ order.discount }}</span></div>
+            {% endif %}
+            <div class="grand"><span>Total</span><span>₹{{ order.total }}</span></div>
+        </div>
+
+        <div class="foot">
+            {% if order.payment_method == 'cod' and not order.is_paid %}
+                <p><strong>⚠ Cash on Delivery — collect ₹{{ order.total }} from the customer.</strong></p>
+            {% elif order.payment_reference %}
+                <p>Paid by UPI. Reference: {{ order.payment_reference }}</p>
+            {% endif %}
+            <p style="margin-top:0.5rem;">
+                Thank you for buying direct from our farmers. Questions? Call {{ store.support_phone }}.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

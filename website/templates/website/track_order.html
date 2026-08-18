@@ -1,0 +1,52 @@
+{% extends 'website/base.html' %}
+
+{% block title %}Track your order - Avee Foods{% endblock %}
+
+{% block content %}
+<div class="container container-narrow">
+    <h1 class="page-title">📦 Track your order</h1>
+    <p class="section-lead">
+        Enter the order number from your confirmation along with the mobile number you
+        ordered with.
+    </p>
+
+    <div class="detail-section">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="form-grid">
+                <div class="form-field">
+                    <label for="order_number" class="required">Order number</label>
+                    <input type="text" id="order_number" name="order_number" class="field-input"
+                           value="{{ data.order_number|default:'' }}" placeholder="e.g. AF260815AB12"
+                           autocapitalize="characters" required>
+                    {% if errors.order_number %}<span class="field-error">{{ errors.order_number }}</span>{% endif %}
+                </div>
+                <div class="form-field">
+                    <label for="phone" class="required">Mobile number used to order</label>
+                    <input type="tel" id="phone" name="phone" class="field-input"
+                           value="{{ data.phone|default:'' }}" inputmode="numeric" maxlength="10"
+                           placeholder="10 digit mobile number" required>
+                    {% if errors.phone %}<span class="field-error">{{ errors.phone }}</span>{% endif %}
+                </div>
+            </div>
+            <button type="submit" class="btn" style="margin-top:1.25rem;">Track order</button>
+        </form>
+
+        {% if user.is_authenticated %}
+            <p class="summary-note">
+                Or see everything you've ordered in your
+                <a href="{% url 'website:my_orders' %}">order history</a>.
+            </p>
+        {% endif %}
+    </div>
+
+    <div class="info-panel" style="margin-top:1.5rem;">
+        <h2 class="section-title" style="font-size:1.1rem;">Can't find your order number?</h2>
+        <p style="font-size:0.93rem; color:#5f6b73;">
+            It looks like <strong>AF260815AB12</strong> and was shown right after checkout.
+            Call us on <a href="tel:{{ store.support_phone }}">{{ store.support_phone }}</a>
+            with your mobile number and we'll look it up.
+        </p>
+    </div>
+</div>
+{% endblock %}

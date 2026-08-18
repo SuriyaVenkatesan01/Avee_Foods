@@ -1,0 +1,142 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}{% if banner %}Edit{% else %}Upload{% endif %} Home Banner - Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">
+        {% if banner %}✏️ Edit Home Banner{% else %}⬆️ Upload Photo / Video{% endif %}
+    </h1>
+    <a href="{% url 'dashboard:banners_list' %}" class="btn btn-secondary">Back to banner list</a>
+</div>
+
+<div class="form-container">
+    <form method="post" enctype="multipart/form-data" novalidate id="banner-form">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="media_type">What are you uploading? *</label>
+            <select id="media_type" name="media_type" required>
+                {% for value, label in type_choices %}
+                    <option value="{{ value }}" {% if data.media_type == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            {% if errors.media_type %}<small style="color:#c0392b;">{{ errors.media_type }}</small>{% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="file">File {% if not banner %}*{% endif %}</label>
+            <input type="file" id="file" name="file">
+            <small style="color:#7f8c8d;" id="file-hint"></small>
+            {% if errors.file %}<small style="color:#c0392b; display:block;">{{ errors.file }}</small>{% endif %}
+
+            {% if banner and banner.file %}
+                <div style="margin-top: 1rem;">
+                    <strong>Current file:</strong><br>
+                    {% if banner.is_video %}
+                        <video src="{{ banner.file.url }}" controls muted preload="metadata"
+                               style="max-width: 320px; width: 100%; border-radius: 6px; background:#000; margin-top:0.5rem;"></video>
+                    {% else %}
+                        <img src="{{ banner.file.url }}" alt="" class="image-preview">
+                    {% endif %}
+                    <small style="color:#7f8c8d; display:block;">
+                        Leave the file box empty to keep this file.
+                    </small>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="form-group" id="duration-group">
+            <label for="duration_seconds">Seconds on screen</label>
+            <input type="number" id="duration_seconds" name="duration_seconds"
+                   value="{{ data.duration_seconds }}" min="1" max="60">
+            <small style="color:#7f8c8d;">
+                Photos only. With several photos switched on, each one holds this long
+                before the next appears. A video always plays to the end.
+            </small>
+        </div>
+
+        <div class="form-group">
+            <label for="display_order">Order</label>
+            <input type="number" id="display_order" name="display_order"
+                   value="{{ data.display_order }}" min="0">
+            <small style="color:#7f8c8d;">Lower numbers show first in the rotation.</small>
+        </div>
+
+        <div class="form-group">
+            <label class="product-checkbox" style="max-width: 300px;">
+                <input type="checkbox" name="is_active" {% if data.is_active %}checked{% endif %}>
+                Show this on the home page
+            </label>
+        </div>
+
+        <hr style="border:none; border-top:1px solid var(--border); margin: 2rem 0 1.5rem;">
+
+        <h2 style="font-size: 1.05rem; color: var(--dark); margin-bottom: 0.5rem;">
+            Text over the banner <span style="font-weight:normal; color:#7f8c8d;">(optional)</span>
+        </h2>
+        <p style="color:#7f8c8d; font-size:0.9rem; margin-bottom:1.25rem;">
+            Leave these empty to show the photo or video on its own with no writing on top.
+        </p>
+
+        <div class="form-group">
+            <label for="title">Heading</label>
+            <input type="text" id="title" name="title" value="{{ data.title }}"
+                   maxlength="150" placeholder="e.g. Cold pressed, straight from the farm">
+        </div>
+
+        <div class="form-group">
+            <label for="subtitle">Sub heading</label>
+            <input type="text" id="subtitle" name="subtitle" value="{{ data.subtitle }}"
+                   maxlength="250" placeholder="One supporting line">
+        </div>
+
+        <div class="form-group">
+            <label for="button_text">Button text</label>
+            <input type="text" id="button_text" name="button_text" value="{{ data.button_text }}"
+                   maxlength="60" placeholder="e.g. Shop Now">
+        </div>
+
+        <div class="form-group">
+            <label for="button_url">Button link</label>
+            <input type="text" id="button_url" name="button_url" value="{{ data.button_url }}"
+                   maxlength="250" placeholder="/products/">
+            <small style="color:#7f8c8d;">
+                e.g. <code>/products/</code>, <code>/process/</code> or a full https:// address.
+            </small>
+            {% if errors.button_url %}<small style="color:#c0392b; display:block;">{{ errors.button_url }}</small>{% endif %}
+        </div>
+
+        <div class="form-buttons">
+            <button type="submit" class="btn">{% if banner %}Update Banner{% else %}Upload{% endif %}</button>
+            <a href="{% url 'dashboard:banners_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+(function () {
+    var type = document.getElementById('media_type');
+    var file = document.getElementById('file');
+    var hint = document.getElementById('file-hint');
+    var durationGroup = document.getElementById('duration-group');
+
+    var accepts = {
+        image: {accept: 'image/*', text: 'Allowed: {{ image_extensions }}'},
+        video: {accept: 'video/*', text: 'Allowed: {{ video_extensions }}. Keep clips short — the whole file downloads for every visitor.'}
+    };
+
+    // Point the file picker at the right kind of file and hide the seconds
+    // box for videos, which run to their own length
+    function sync() {
+        var config = accepts[type.value] || accepts.image;
+        file.setAttribute('accept', config.accept);
+        hint.textContent = config.text;
+        durationGroup.style.display = type.value === 'video' ? 'none' : '';
+    }
+
+    type.addEventListener('change', sync);
+    sync();
+})();
+</script>
+{% endblock %}

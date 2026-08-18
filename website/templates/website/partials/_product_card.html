@@ -1,0 +1,74 @@
+{% load avee_extras %}
+{% comment %}
+Product card used on home, listing, category and related-product grids.
+
+Context:
+  product -- FoodProduct (required)
+{% endcomment %}
+<div class="product-card">
+    {% with variant=product.default_variant %}
+        {% if not product.in_stock %}
+            <span class="ribbon ribbon-out">Out of stock</span>
+        {% elif variant.discount_percent %}
+            <span class="ribbon">{{ variant.discount_percent }}% OFF</span>
+        {% endif %}
+
+        <a href="{{ product.get_absolute_url }}" class="product-image">
+            {% if product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}" loading="lazy">
+            {% else %}
+                <span>No Image</span>
+            {% endif %}
+        </a>
+
+        <div class="product-info">
+            {% if product.subcategory %}
+                <div class="card-category">{{ product.subcategory.name }}</div>
+            {% elif product.category %}
+                <div class="card-category">{{ product.category.label }}</div>
+            {% endif %}
+
+            <div class="product-name">
+                <a href="{{ product.get_absolute_url }}">{{ product.name }}</a>
+            </div>
+
+            {% if product.pack_labels %}
+                <div class="pack-chips">
+                    {% for label in product.pack_labels %}
+                        <span class="pack-chip">{{ label }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="product-price">
+                {% if product.price_range %}<span class="from">From </span>{% endif %}
+                ₹{{ product.display_price|inr }}
+                {% if variant.mrp and variant.discount_percent %}
+                    <span class="mrp">₹{{ variant.mrp|inr }}</span>
+                {% endif %}
+                {% if variant.label %}
+                    <span class="from">/ {{ variant.label }}</span>
+                {% endif %}
+            </div>
+
+            <div class="product-description">
+                {{ product.short_description|default:product.description|truncatewords:14 }}
+            </div>
+
+            {% if variant and product.in_stock %}
+                <form method="post" action="{% url 'website:cart_add' %}" style="display:grid; gap:0.5rem; margin-top:auto;">
+                    {% csrf_token %}
+                    <input type="hidden" name="variant" value="{{ variant.pk }}">
+                    <input type="hidden" name="quantity" value="1">
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button type="submit" class="btn btn-block">🛒 Add {{ variant.label }}</button>
+                    <a href="{{ product.get_absolute_url }}" class="btn btn-outline btn-block btn-small">
+                        {% if product.active_variants|length > 1 %}Choose other sizes{% else %}View details{% endif %}
+                    </a>
+                </form>
+            {% else %}
+                <a href="{{ product.get_absolute_url }}" class="btn btn-outline btn-block" style="margin-top:auto;">View details</a>
+            {% endif %}
+        </div>
+    {% endwith %}
+</div>

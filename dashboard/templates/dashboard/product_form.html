@@ -1,0 +1,488 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}{% if product %}Edit{% else %}Add{% endif %} Product - Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">
+        {% if product %}✏️ Edit Product: {{ product.name }}{% else %}➕ Add New Product{% endif %}
+    </h1>
+    <a href="{% url 'dashboard:products_list' %}" class="btn btn-secondary">Back to products</a>
+</div>
+
+<style>
+    /* Pack size rows: a scrollable grid on desktop, stacked cards on mobile */
+    .variant-rows { display: grid; gap: 0.75rem; }
+
+    .variant-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1.3fr 1fr 1fr 0.9fr 0.8fr auto;
+        gap: 0.6rem;
+        align-items: end;
+        padding: 0.85rem;
+        border: 1px solid #bdc3c7;
+        border-radius: 8px;
+        background: #fafafa;
+    }
+
+    .variant-row.marked-delete { opacity: 0.45; background: #fdecea; }
+
+    .variant-row .cell { min-width: 0; }
+
+    .variant-row label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: #7f8c8d;
+        margin-bottom: 0.25rem;
+    }
+
+    .variant-row input,
+    .variant-row select { padding: 0.55rem; font-size: 0.95rem; }
+
+    .variant-row .row-error { color: #c0392b; font-size: 0.75rem; display: block; }
+
+    .variant-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.8rem;
+        font-weight: normal;
+        white-space: nowrap;
+        color: var(--dark);
+    }
+
+    .variant-toggle input { width: auto; }
+
+    .wide-container { max-width: 1100px; }
+
+    .helper-box {
+        background: #eaf4fd;
+        border: 1px solid #b3d9f5;
+        border-radius: 6px;
+        padding: 0.85rem 1rem;
+        font-size: 0.88rem;
+        color: #1c5680;
+        margin-bottom: 1rem;
+    }
+
+    @media (max-width: 900px) {
+        .variant-row { grid-template-columns: 1fr 1fr; }
+        .variant-row .cell.span { grid-column: 1 / -1; }
+    }
+</style>
+
+<div class="form-container wide-container">
+    <form method="post" enctype="multipart/form-data" novalidate id="product-form">
+        {% csrf_token %}
+
+        <!-- ============ BASICS ============ -->
+        <h2 style="font-size: 1.15rem; color: var(--dark); margin-bottom: 1rem;">1. Product basics</h2>
+
+        <div class="form-group">
+            <label for="name">Product Name *</label>
+            <input type="text" id="name" name="name" value="{{ data.name }}"
+                   placeholder="e.g. Groundnut Oil" required>
+            {% if errors.name %}<small style="color:#c0392b;">{{ errors.name }}</small>{% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="category">Category *</label>
+            <select id="category" name="category" required>
+                <option value="">— Select a category —</option>
+                {% for category in categories %}
+                    <option value="{{ category.pk }}" {% if data.category == category.pk|stringformat:"s" %}selected{% endif %}>
+                        {{ category.icon }} {{ category.name }} ({{ category.get_measure_type_display }})
+                    </option>
+                {% endfor %}
+            </select>
+            {% if errors.category %}<small style="color:#c0392b;">{{ errors.category }}</small>{% endif %}
+            {% if not categories %}
+                <small style="color:#c0392b;">
+                    No categories yet — <a href="{% url 'dashboard:category_add' %}">add one first</a>.
+                </small>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="subcategory">Subcategory</label>
+            <select id="subcategory" name="subcategory">
+                <option value="">— None —</option>
+                {% for sub in subcategories %}
+                    <option value="{{ sub.pk }}" data-category="{{ sub.category_id }}"
+                            {% if data.subcategory == sub.pk|stringformat:"s" %}selected{% endif %}>
+                        {{ sub.name }}
+                    </option>
+                {% endfor %}
+            </select>
+            <small style="color:#7f8c8d;" id="subcategory-hint">
+                e.g. Groundnut Oil, Coconut Oil. The list follows the category above.
+            </small>
+            {% if errors.subcategory %}<small style="color:#c0392b; display:block;">{{ errors.subcategory }}</small>{% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="short_description">Short description</label>
+            <input type="text" id="short_description" name="short_description"
+                   value="{{ data.short_description }}" maxlength="250"
+                   placeholder="One line shown on product cards">
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description *</label>
+            <textarea id="description" name="description" rows="5" required>{{ data.description }}</textarea>
+            {% if errors.description %}<small style="color:#c0392b;">{{ errors.description }}</small>{% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="image">Main Product Image {% if not product %}*{% endif %}</label>
+            <input type="file" id="image" name="image" accept="image/*">
+            {% if errors.image %}<small style="color:#c0392b;">{{ errors.image }}</small>{% endif %}
+            {% if product and product.image %}
+                <div style="margin-top: 1rem;">
+                    <strong>Current Image:</strong>
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="image-preview">
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="extra_images">Extra gallery images</label>
+            <input type="file" id="extra_images" name="extra_images" accept="image/*" multiple>
+            <small style="color:#7f8c8d;">Optional. Shown as thumbnails on the product page.</small>
+            {% if product and product.images.all %}
+                <div class="products-preview">
+                    {% for extra in product.images.all %}
+                        <img src="{{ extra.image.url }}" alt="" style="width:100%; height:90px; object-fit:cover; border-radius:4px;">
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- ============ PACK SIZES ============ -->
+        <h2 style="font-size: 1.15rem; color: var(--dark); margin: 2rem 0 1rem;">
+            2. Pack sizes &amp; prices *
+        </h2>
+
+        <div class="helper-box">
+            Every size you sell is one row — oil as <strong>250 ml, 500 ml, 1 L, 2 L, 5 L, 15 L</strong>,
+            cashews as <strong>250 g, 500 g, 1 kg</strong>. Leave <em>Label</em> blank and it is
+            filled in automatically ("500 ml"). At least one row is required.
+        </div>
+
+        {% if errors.variants %}
+            <div class="alert alert-error">{{ errors.variants }}</div>
+        {% endif %}
+
+        <div class="variant-rows" id="variant-rows">
+            {% for row in variant_rows %}
+                <div class="variant-row {% if row.delete %}marked-delete{% endif %}">
+                    <input type="hidden" name="variant_rows" value="{{ row.index }}">
+                    <input type="hidden" name="variant_id_{{ row.index }}" value="{{ row.id }}">
+
+                    <div class="cell">
+                        <label for="variant_pack_size_{{ row.index }}">Pack size *</label>
+                        <input type="number" step="0.01" min="0.01" id="variant_pack_size_{{ row.index }}"
+                               name="variant_pack_size_{{ row.index }}" value="{{ row.pack_size }}" placeholder="500">
+                        {% if row.errors.pack_size %}<span class="row-error">{{ row.errors.pack_size }}</span>{% endif %}
+                    </div>
+
+                    <div class="cell">
+                        <label for="variant_unit_{{ row.index }}">Unit *</label>
+                        <select id="variant_unit_{{ row.index }}" name="variant_unit_{{ row.index }}">
+                            {% for value, label in unit_choices %}
+                                <option value="{{ value }}" {% if row.unit == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if row.errors.unit %}<span class="row-error">{{ row.errors.unit }}</span>{% endif %}
+                    </div>
+
+                    <div class="cell">
+                        <label for="variant_label_{{ row.index }}">Label</label>
+                        <input type="text" id="variant_label_{{ row.index }}"
+                               name="variant_label_{{ row.index }}" value="{{ row.label }}" placeholder="auto">
+                    </div>
+
+                    <div class="cell">
+                        <label for="variant_price_{{ row.index }}">Price ₹ *</label>
+                        <input type="number" step="0.01" min="0" id="variant_price_{{ row.index }}"
+                               name="variant_price_{{ row.index }}" value="{{ row.price }}" placeholder="250">
+                        {% if row.errors.price %}<span class="row-error">{{ row.errors.price }}</span>{% endif %}
+                    </div>
+
+                    <div class="cell">
+                        <label for="variant_mrp_{{ row.index }}">MRP ₹</label>
+                        <input type="number" step="0.01" min="0" id="variant_mrp_{{ row.index }}"
+                               name="variant_mrp_{{ row.index }}" value="{{ row.mrp }}" placeholder="strike-through">
+                        {% if row.errors.mrp %}<span class="row-error">{{ row.errors.mrp }}</span>{% endif %}
+                    </div>
+
+                    <div class="cell">
+                        <label for="variant_stock_{{ row.index }}">Stock</label>
+                        <input type="number" min="0" id="variant_stock_{{ row.index }}"
+                               name="variant_stock_{{ row.index }}" value="{{ row.stock }}">
+                    </div>
+
+                    <div class="cell">
+                        <label for="variant_display_order_{{ row.index }}">Order</label>
+                        <input type="number" min="0" id="variant_display_order_{{ row.index }}"
+                               name="variant_display_order_{{ row.index }}" value="{{ row.display_order }}">
+                    </div>
+
+                    <div class="cell span" style="display:grid; gap:0.35rem;">
+                        <label class="variant-toggle">
+                            <input type="checkbox" name="variant_active_{{ row.index }}"
+                                   {% if row.is_active %}checked{% endif %}> Active
+                        </label>
+                        <label class="variant-toggle" style="color:#c0392b;">
+                            <input type="checkbox" name="variant_delete_{{ row.index }}"
+                                   {% if row.delete %}checked{% endif %} data-delete-toggle> Delete
+                        </label>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <button type="button" class="btn btn-success btn-small" id="add-variant" style="margin-top: 1rem;">
+            + Add another pack size
+        </button>
+
+        <!-- ============ JSON DETAILS ============ -->
+        <h2 style="font-size: 1.15rem; color: var(--dark); margin: 2rem 0 1rem;">
+            3. Product details (JSON)
+        </h2>
+
+        <div class="helper-box">
+            This is the structured copy shown on the product page — highlights, specifications,
+            nutrition, sourcing and FAQ. Every block is optional; leave out whatever does not
+            apply. Click <strong>Insert template</strong> for the expected shape, then edit the values.
+        </div>
+
+        <div class="form-group">
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.5rem;">
+                <button type="button" class="btn btn-secondary btn-small" id="insert-template">Insert template</button>
+                <button type="button" class="btn btn-secondary btn-small" id="format-json">Format JSON</button>
+                <button type="button" class="btn btn-danger btn-small" id="clear-json">Clear</button>
+                <span id="json-status" style="align-self:center; font-size:0.85rem;"></span>
+            </div>
+            <textarea id="details" name="details" rows="16" spellcheck="false"
+                      style="font-family: Consolas, monospace; font-size: 0.9rem;">{{ data.details }}</textarea>
+            {% if errors.details %}<small style="color:#c0392b;">{{ errors.details }}</small>{% endif %}
+        </div>
+
+        <!-- ============ VISIBILITY ============ -->
+        <h2 style="font-size: 1.15rem; color: var(--dark); margin: 2rem 0 1rem;">4. Listing options</h2>
+
+        <div class="form-group">
+            <label for="slug">URL slug</label>
+            <input type="text" id="slug" name="slug" value="{{ data.slug }}"
+                   placeholder="auto-generated from the name">
+            <small style="color:#7f8c8d;">
+                Leave blank and we build it from the name. Spaces, capitals and
+                punctuation are cleaned up automatically —
+                <code>Groundnut Oil</code> becomes <code>groundnut-oil</code>.
+            </small>
+        </div>
+
+        <div class="form-group">
+            <label for="display_order">Display order</label>
+            <input type="number" id="display_order" name="display_order" value="{{ data.display_order }}" min="0">
+        </div>
+
+        <div class="form-group">
+            <div class="products-preview" style="margin: 0;">
+                <label class="product-checkbox">
+                    <input type="checkbox" name="is_active" {% if data.is_active %}checked{% endif %}> Active
+                </label>
+                <label class="product-checkbox">
+                    <input type="checkbox" name="is_featured" {% if data.is_featured %}checked{% endif %}> Featured on home
+                </label>
+                <label class="product-checkbox">
+                    <input type="checkbox" name="stock_managed" {% if data.stock_managed %}checked{% endif %}> Track stock
+                </label>
+            </div>
+        </div>
+
+        <div class="form-buttons">
+            <button type="submit" class="btn">{% if product %}Update Product{% else %}Add Product{% endif %}</button>
+            <a href="{% url 'dashboard:products_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<!-- Blank pack-size row cloned by "Add another pack size" -->
+<template id="variant-template">
+    <div class="variant-row">
+        <input type="hidden" name="variant_rows" value="__INDEX__">
+        <input type="hidden" name="variant_id___INDEX__" value="">
+
+        <div class="cell">
+            <label>Pack size *</label>
+            <input type="number" step="0.01" min="0.01" name="variant_pack_size___INDEX__" placeholder="500">
+        </div>
+        <div class="cell">
+            <label>Unit *</label>
+            <select name="variant_unit___INDEX__">
+                {% for value, label in unit_choices %}
+                    <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="cell">
+            <label>Label</label>
+            <input type="text" name="variant_label___INDEX__" placeholder="auto">
+        </div>
+        <div class="cell">
+            <label>Price ₹ *</label>
+            <input type="number" step="0.01" min="0" name="variant_price___INDEX__" placeholder="250">
+        </div>
+        <div class="cell">
+            <label>MRP ₹</label>
+            <input type="number" step="0.01" min="0" name="variant_mrp___INDEX__" placeholder="strike-through">
+        </div>
+        <div class="cell">
+            <label>Stock</label>
+            <input type="number" min="0" name="variant_stock___INDEX__" value="0">
+        </div>
+        <div class="cell">
+            <label>Order</label>
+            <input type="number" min="0" name="variant_display_order___INDEX__" value="0">
+        </div>
+        <div class="cell span" style="display:grid; gap:0.35rem;">
+            <label class="variant-toggle">
+                <input type="checkbox" name="variant_active___INDEX__" checked> Active
+            </label>
+            <button type="button" class="btn btn-danger btn-small" data-remove-row>Remove</button>
+        </div>
+    </div>
+</template>
+
+<script id="details-template" type="application/json">{{ details_template }}</script>
+
+<script>
+(function () {
+    // ---- Category -> Subcategory dependent dropdown ----
+    var categorySelect = document.getElementById('category');
+    var subSelect = document.getElementById('subcategory');
+    var subHint = document.getElementById('subcategory-hint');
+
+    if (categorySelect && subSelect) {
+        // Keep the full list around; the visible options are rebuilt each time
+        // the category changes so a mismatched pair can never be submitted
+        var allOptions = Array.prototype.slice.call(subSelect.options).map(function (option) {
+            return {value: option.value, text: option.text, category: option.dataset.category || ''};
+        });
+
+        function syncSubcategories() {
+            var categoryId = categorySelect.value;
+            var previous = subSelect.value;
+            var matches = allOptions.filter(function (option) {
+                return option.value === '' || option.category === categoryId;
+            });
+
+            subSelect.innerHTML = '';
+            matches.forEach(function (option) {
+                var element = document.createElement('option');
+                element.value = option.value;
+                element.textContent = option.text;
+                if (option.category) element.dataset.category = option.category;
+                subSelect.appendChild(element);
+            });
+
+            // Keep the choice only if it still belongs to this category
+            subSelect.value = matches.some(function (o) { return o.value === previous; })
+                ? previous : '';
+
+            var count = matches.length - 1;
+            subSelect.disabled = !categoryId;
+            if (!categoryId) {
+                subHint.textContent = 'Pick a category first.';
+            } else if (count === 0) {
+                subHint.textContent = 'This category has no subcategories yet — that is fine, ' +
+                                      'the product will sit directly under the category.';
+            } else {
+                subHint.textContent = count + ' subcategory option(s) for this category.';
+            }
+        }
+
+        categorySelect.addEventListener('change', syncSubcategories);
+        syncSubcategories();
+    }
+
+    var rows = document.getElementById('variant-rows');
+    var template = document.getElementById('variant-template');
+    // New rows use a "new-N" index so they never collide with a variant pk
+    var counter = 0;
+
+    function addRow() {
+        counter += 1;
+        var html = template.innerHTML.replace(/__INDEX__/g, 'new' + counter);
+        var wrapper = document.createElement('div');
+        wrapper.innerHTML = html.trim();
+        rows.appendChild(wrapper.firstChild);
+    }
+
+    document.getElementById('add-variant').addEventListener('click', addRow);
+
+    // Start a brand new product with three empty rows ready to fill
+    if (!rows.children.length) {
+        addRow(); addRow(); addRow();
+    }
+
+    rows.addEventListener('click', function (e) {
+        if (e.target.matches('[data-remove-row]')) {
+            e.target.closest('.variant-row').remove();
+        }
+    });
+
+    // Ticking "Delete" greys the row out so the intent is obvious before saving
+    rows.addEventListener('change', function (e) {
+        if (e.target.matches('[data-delete-toggle]')) {
+            e.target.closest('.variant-row').classList.toggle('marked-delete', e.target.checked);
+        }
+    });
+
+    // ---- JSON details helpers ----
+    var details = document.getElementById('details');
+    var status = document.getElementById('json-status');
+
+    function setStatus(message, ok) {
+        status.textContent = message;
+        status.style.color = ok ? 'var(--green)' : '#c0392b';
+    }
+
+    document.getElementById('insert-template').addEventListener('click', function () {
+        if (details.value.trim() && !confirm('Replace what is in the box with the template?')) return;
+        details.value = document.getElementById('details-template').textContent;
+        setStatus('Template inserted — edit the values.', true);
+    });
+
+    document.getElementById('format-json').addEventListener('click', function () {
+        if (!details.value.trim()) { setStatus('Nothing to format.', false); return; }
+        try {
+            details.value = JSON.stringify(JSON.parse(details.value), null, 2);
+            setStatus('Valid JSON ✔', true);
+        } catch (err) {
+            setStatus('Invalid JSON — ' + err.message, false);
+        }
+    });
+
+    document.getElementById('clear-json').addEventListener('click', function () {
+        details.value = '';
+        setStatus('', true);
+    });
+
+    // Catch a JSON typo before the round trip to the server
+    document.getElementById('product-form').addEventListener('submit', function (e) {
+        if (!details.value.trim()) return;
+        try {
+            JSON.parse(details.value);
+        } catch (err) {
+            e.preventDefault();
+            setStatus('Invalid JSON — ' + err.message, false);
+            details.focus();
+        }
+    });
+})();
+</script>
+{% endblock %}

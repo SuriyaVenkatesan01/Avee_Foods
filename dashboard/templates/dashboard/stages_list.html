@@ -1,0 +1,121 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Process Stages - Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">🌾 Farm to Home — Process Stages</h1>
+    <a href="{% url 'dashboard:stage_add' %}" class="btn">+ Add Stage</a>
+</div>
+
+<div class="panel" style="margin-bottom: 1.5rem;">
+    <p style="color: #7f8c8d;">
+        These stages are the "farmer → your home" story shown on the
+        <a href="{% url 'website:home' %}" target="_blank" rel="noopener">home page</a>,
+        every product page, the products list, the category pages and the About page.
+        A stage with <strong>no category</strong> shows everywhere. Give a stage a category
+        (Oils, Cashews) and that range shows its own journey instead.
+    </p>
+</div>
+
+<h2 style="font-size: 1.15rem; color: var(--dark); margin-bottom: 1rem;">
+    🌍 Global stages — shown on every page
+</h2>
+
+{% if global_stages %}
+    <div class="table-container" style="margin-bottom: 2rem;">
+        <table>
+            <thead>
+                <tr><th>Order</th><th>Stage</th><th>Duration</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                {% for stage in global_stages %}
+                    <tr>
+                        <td data-label="Order">{{ stage.display_order }}</td>
+                        <td data-label="Stage">
+                            <strong>{{ stage.icon }} {{ stage.title }}</strong><br>
+                            <span style="font-size: 0.85rem; color: #7f8c8d;">
+                                {{ stage.subtitle|default:stage.description|truncatechars:70 }}
+                            </span>
+                        </td>
+                        <td data-label="Duration">{{ stage.duration|default:"—" }}</td>
+                        <td data-label="Status">
+                            {% if stage.is_active %}
+                                <span style="background:#d4edda; color:#155724; padding:0.25rem 0.75rem; border-radius:4px;">Live</span>
+                            {% else %}
+                                <span style="background:#f8d7da; color:#721c24; padding:0.25rem 0.75rem; border-radius:4px;">Hidden</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Actions">
+                            <div class="action-buttons">
+                                <a href="{% url 'dashboard:stage_edit' stage.pk %}" class="btn btn-secondary btn-small">Edit</a>
+                                <a href="{% url 'dashboard:stage_delete' stage.pk %}" class="btn btn-danger btn-small">Delete</a>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="empty-state" style="margin-bottom: 2rem;">
+        <p style="font-size: 1.15rem; margin-bottom: 0.5rem;">🌾 No global stages yet</p>
+        <p style="margin-bottom: 1.5rem;">
+            Add stages like <em>Farmer Partnership → Harvest → Cold Press → Filtering →
+            Lab Test → Packing → Dispatch → At Your Doorstep</em>. They appear on every page
+            as soon as you save them.
+        </p>
+        <a href="{% url 'dashboard:stage_add' %}" class="btn">Add Your First Stage</a>
+    </div>
+{% endif %}
+
+<h2 style="font-size: 1.15rem; color: var(--dark); margin-bottom: 1rem;">
+    🗂️ Category specific stages
+</h2>
+
+{% if category_stages %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr><th>Category</th><th>Order</th><th>Stage</th><th>Duration</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                {% for stage in category_stages %}
+                    <tr>
+                        <td data-label="Category">
+                            <span style="background:#d1ecf1; padding:0.25rem 0.75rem; border-radius:4px;">
+                                {{ stage.category.icon }} {{ stage.category.name }}
+                            </span>
+                        </td>
+                        <td data-label="Order">{{ stage.display_order }}</td>
+                        <td data-label="Stage">
+                            <strong>{{ stage.icon }} {{ stage.title }}</strong><br>
+                            <span style="font-size: 0.85rem; color: #7f8c8d;">
+                                {{ stage.subtitle|default:stage.description|truncatechars:70 }}
+                            </span>
+                        </td>
+                        <td data-label="Duration">{{ stage.duration|default:"—" }}</td>
+                        <td data-label="Status">
+                            {% if stage.is_active %}
+                                <span style="background:#d4edda; color:#155724; padding:0.25rem 0.75rem; border-radius:4px;">Live</span>
+                            {% else %}
+                                <span style="background:#f8d7da; color:#721c24; padding:0.25rem 0.75rem; border-radius:4px;">Hidden</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Actions">
+                            <div class="action-buttons">
+                                <a href="{% url 'dashboard:stage_edit' stage.pk %}" class="btn btn-secondary btn-small">Edit</a>
+                                <a href="{% url 'dashboard:stage_delete' stage.pk %}" class="btn btn-danger btn-small">Delete</a>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="empty-state">
+        <p>No category specific stages. Every category currently shows the global journey.</p>
+    </div>
+{% endif %}
+{% endblock %}

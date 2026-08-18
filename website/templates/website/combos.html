@@ -1,0 +1,59 @@
+{% extends 'website/base.html' %}
+{% load avee_extras %}
+
+{% block title %}Combos - Avee Foods{% endblock %}
+
+{% block content %}
+<div class="container page-centered">
+    <h1 class="page-title">Special Combos</h1>
+    <p class="section-lead">Get more for less with our exclusive combo offers.</p>
+
+    {% if combos %}
+        <div class="products-grid">
+            {% for combo in combos %}
+                <div class="product-card">
+                    {% if combo.discount_percent %}
+                        <span class="ribbon">{{ combo.discount_percent }}% OFF</span>
+                    {% endif %}
+
+                    <a href="{% url 'website:combo_detail' combo.pk %}" class="product-image">
+                        {% if combo.image %}
+                            <img src="{{ combo.image.url }}" alt="{{ combo.name }}" loading="lazy">
+                        {% else %}
+                            <span>No Image</span>
+                        {% endif %}
+                    </a>
+
+                    <div class="product-info">
+                        <div class="product-name">
+                            <a href="{% url 'website:combo_detail' combo.pk %}">{{ combo.name }}</a>
+                        </div>
+                        <div class="product-price">₹{{ combo.price|inr }}</div>
+                        <div class="product-description">{{ combo.description|truncatewords:15 }}</div>
+
+                        {% if combo.products.all %}
+                            <div style="margin-bottom:1rem;">
+                                <strong style="font-size:0.88rem;">Includes:</strong>
+                                <ul class="tick-list" style="margin-top:0.4rem; font-size:0.85rem;">
+                                    {% for product in combo.products.all %}
+                                        <li>{{ product.name }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+
+                        <a href="{% url 'website:combo_detail' combo.pk %}" class="btn btn-block">View Combo</a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <p style="font-size:1.1rem;">🎁 No combos available yet.</p>
+            <a href="{% url 'website:food_products' %}" class="btn btn-outline btn-small" style="margin-top:1rem;">
+                Browse products
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,140 @@
+{% extends 'website/base.html' %}
+{% load avee_extras %}
+
+{% block title %}Your Cart - Avee Foods{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="page-title">🛒 Your Cart</h1>
+
+    {% if cart_obj and cart_obj.items.exists %}
+        <div class="shop-grid">
+            <!-- ============ LINE ITEMS ============ -->
+            <div class="detail-section">
+                {% if cart_obj.amount_for_free_shipping > 0 %}
+                    <div class="free-ship-bar">
+                        Add <strong>₹{{ cart_obj.amount_for_free_shipping|inr }}</strong> more and delivery is free.
+                    </div>
+                {% else %}
+                    <div class="free-ship-bar">🎉 You've unlocked <strong>free delivery</strong> on this order.</div>
+                {% endif %}
+
+                {% for item in cart_obj.line_items %}
+                    <div class="cart-line">
+                        <a href="{{ item.variant.product.get_absolute_url }}">
+                            {% if item.variant.product.image %}
+                                <img src="{{ item.variant.product.image.url }}" alt="{{ item.variant.product.name }}" class="cart-line-img">
+                            {% else %}
+                                <div class="cart-line-img"></div>
+                            {% endif %}
+                        </a>
+
+                        <div>
+                            <a href="{{ item.variant.product.get_absolute_url }}" class="cart-line-title">
+                                {{ item.variant.product.name }}
+                            </a>
+                            <div style="font-size:0.88rem; color:var(--muted);">
+                                Pack: {{ item.variant.label }} · ₹{{ item.variant.price|inr }} each
+                                {% if item.variant.unit_rate %}
+                                    · ₹{{ item.variant.unit_rate|inr }}{{ item.variant.unit_rate_label }}
+                                {% endif %}
+                            </div>
+
+                            {% if not item.is_available %}
+                                <div style="color:var(--accent); font-size:0.87rem; font-weight:600; margin-top:0.25rem;">
+                                    ⚠ Only {{ item.variant.stock }} left in stock — please reduce the quantity.
+                                </div>
+                            {% endif %}
+
+                            <div class="cart-line-controls">
+                                <form method="post" action="{% url 'website:cart_update' item.pk %}">
+                                    {% csrf_token %}
+                                    <span class="qty-stepper">
+                                        <button type="button" data-step="down" aria-label="Decrease quantity">−</button>
+                                        <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="99"
+                                               aria-label="Quantity for {{ item.variant.product.name }}"
+                                               onchange="this.form.submit()">
+                                        <button type="button" data-step="up" aria-label="Increase quantity">+</button>
+                                    </span>
+                                    <noscript><button type="submit" class="btn btn-small">Update</button></noscript>
+                                </form>
+
+                                <form method="post" action="{% url 'website:cart_remove' item.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="link-danger">Remove</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="cart-line-price" style="text-align:right;">
+                            <strong style="font-size:1.1rem;">₹{{ item.line_total|inr }}</strong>
+                            {% if item.variant.savings %}
+                                <div style="font-size:0.8rem; color:var(--green);">
+                                    saved ₹{{ item.variant.savings|multiply:item.quantity|inr }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+
+                <div class="btn-row" style="margin-top:1.5rem;">
+                    <a href="{% url 'website:food_products' %}" class="btn btn-outline">← Continue shopping</a>
+                </div>
+            </div>
+
+            <!-- ============ SUMMARY ============ -->
+            <aside class="summary-card">
+                <h2 class="section-title" style="font-size:1.2rem;">Order summary</h2>
+
+                <div class="summary-row">
+                    <span>Subtotal ({{ cart_obj.total_quantity }} item{{ cart_obj.total_quantity|pluralize }})</span>
+                    <span>₹{{ cart_obj.subtotal|inr }}</span>
+                </div>
+
+                {% if cart_obj.total_savings %}
+                    <div class="summary-row" style="color:var(--green);">
+                        <span>You save</span>
+                        <span>− ₹{{ cart_obj.total_savings|inr }}</span>
+                    </div>
+                {% endif %}
+
+                <div class="summary-row">
+                    <span>Delivery</span>
+                    <span>
+                        {% if cart_obj.shipping_fee %}
+                            ₹{{ cart_obj.shipping_fee|inr }}
+                        {% else %}
+                            <strong style="color:var(--green);">FREE</strong>
+                        {% endif %}
+                    </span>
+                </div>
+
+                <div class="summary-row total">
+                    <span>Total</span>
+                    <span>₹{{ cart_obj.total|inr }}</span>
+                </div>
+
+                {% if cart_obj.has_out_of_stock %}
+                    <div class="alert alert-error" style="margin-top:1rem;">
+                        Please fix the stock warnings above before checking out.
+                    </div>
+                {% else %}
+                    <a href="{% url 'website:checkout' %}" class="btn btn-block" style="margin-top:1rem;">
+                        Proceed to Checkout →
+                    </a>
+                {% endif %}
+
+                <p class="summary-note">
+                    💵 Cash on Delivery or UPI · 🚚 Free above ₹{{ store.free_shipping_above|inr }}
+                </p>
+            </aside>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <p style="font-size:1.3rem; margin-bottom:0.5rem;">🛒 Your cart is empty</p>
+            <p style="margin-bottom:1.5rem;">Cold pressed oils and fresh nuts are waiting for you.</p>
+            <a href="{% url 'website:food_products' %}" class="btn">Start shopping</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

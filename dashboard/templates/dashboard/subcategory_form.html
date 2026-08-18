@@ -1,0 +1,63 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}{% if subcategory %}Edit{% else %}Add{% endif %} Subcategory - Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">
+        {% if subcategory %}✏️ Edit Subcategory: {{ subcategory.name }}{% else %}➕ Add New Subcategory{% endif %}
+    </h1>
+    <a href="{% url 'dashboard:subcategories_list' %}" class="btn btn-secondary">Back to list</a>
+</div>
+
+<div class="form-container">
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="category">Category *</label>
+            <select id="category" name="category" required autofocus>
+                <option value="">— Select a category —</option>
+                {% for category in categories %}
+                    <option value="{{ category.pk }}" {% if data.category == category.pk|stringformat:"s" %}selected{% endif %}>
+                        {{ category.icon }} {{ category.name }}
+                    </option>
+                {% endfor %}
+            </select>
+            {% if errors.category %}<small style="color:#c0392b;">{{ errors.category }}</small>{% endif %}
+            {% if not categories %}
+                <small style="color:#c0392b;">
+                    No categories yet — <a href="{% url 'dashboard:category_add' %}">add one first</a>.
+                </small>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="name">Subcategory Name *</label>
+            <input type="text" id="name" name="name" value="{{ data.name }}"
+                   placeholder="e.g. Groundnut Oil" required>
+            {% if errors.name %}<small style="color:#c0392b;">{{ errors.name }}</small>{% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="image">Subcategory Image {% if not subcategory %}*{% endif %}</label>
+            <input type="file" id="image" name="image" accept="image/*">
+            {% if errors.image %}<small style="color:#c0392b;">{{ errors.image }}</small>{% endif %}
+            {% if subcategory and subcategory.image %}
+                <div style="margin-top: 1rem;">
+                    <strong>Current Image:</strong>
+                    <img src="{{ subcategory.image.url }}" alt="{{ subcategory.name }}" class="image-preview">
+                    <small style="color:#7f8c8d; display:block;">
+                        Leave the file box empty to keep this image.
+                    </small>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="form-buttons">
+            <button type="submit" class="btn">{% if subcategory %}Update Subcategory{% else %}Add Subcategory{% endif %}</button>
+            <a href="{% url 'dashboard:subcategories_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Categories - Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">🗂️ Categories</h1>
+    <a href="{% url 'dashboard:category_add' %}" class="btn">+ Add Category</a>
+</div>
+
+{% if categories %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Category</th>
+                    <th>Products</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for category in categories %}
+                    <tr>
+                        <td class="image-cell" data-label="Image">
+                            {% if category.image %}
+                                <img src="{{ category.image.url }}" alt="{{ category.name }}">
+                            {% else %}
+                                <span style="color: #95a5a6;">No Image</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Category">
+                            <strong>{{ category.name }}</strong><br>
+                            <span style="font-size: 0.85rem; color: #7f8c8d;">/{{ category.slug }}</span>
+                        </td>
+                        <td data-label="Products">
+                            {% if category.product_total %}
+                                <a href="{% url 'dashboard:products_list' %}?category={{ category.slug }}">
+                                    {{ category.product_total }}
+                                </a>
+                            {% else %}
+                                <span style="color: #95a5a6;">0</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Status">
+                            {% if category.is_active %}
+                                <span style="background: #d4edda; color: #155724; padding: 0.25rem 0.75rem; border-radius: 4px;">Active</span>
+                            {% else %}
+                                <span style="background: #f8d7da; color: #721c24; padding: 0.25rem 0.75rem; border-radius: 4px;">Hidden</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Actions">
+                            <div class="action-buttons">
+                                <a href="{% url 'dashboard:category_edit' category.pk %}" class="btn btn-secondary btn-small">Edit</a>
+                                <a href="{% url 'dashboard:category_delete' category.pk %}" class="btn btn-danger btn-small">Delete</a>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="empty-state">
+        <p style="font-size: 1.2rem; margin-bottom: 0.5rem;">🗂️ No categories yet</p>
+        <p style="margin-bottom: 1.5rem;">
+            Start here — a product needs a category before you can add it.
+        </p>
+        <a href="{% url 'dashboard:category_add' %}" class="btn">Add Your First Category</a>
+    </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,146 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Home Banner - Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">🖼️ Home Banner</h1>
+    <a href="{% url 'dashboard:banner_add' %}" class="btn">+ Upload Photo / Video</a>
+</div>
+
+<div class="panel" style="margin-bottom: 1.5rem;">
+    <p style="color: #7f8c8d;">
+        Whatever is switched <strong>ON</strong> here shows on the
+        <a href="{% url 'website:home' %}" target="_blank" rel="noopener">home page</a>,
+        right under the header.
+    </p>
+    <ul style="color: #7f8c8d; margin: 0.75rem 0 0 1.2rem;">
+        <li>Turn on <strong>one</strong> photo → that photo alone is shown.</li>
+        <li>Turn on <strong>three</strong> photos → they rotate, each holding for its own
+            seconds setting (5 by default).</li>
+        <li>Turn on a <strong>video</strong> → it plays; the slideshow waits until the clip
+            finishes before moving on. A video on its own loops forever.</li>
+        <li>Turn everything off → the plain purple welcome banner comes back.</li>
+    </ul>
+    <p style="margin-top: 0.75rem;">
+        <strong>{{ live_count }}</strong> item{{ live_count|pluralize }} currently showing on the home page.
+    </p>
+</div>
+
+{% if photos or videos %}
+    {% if photos %}
+        <h2 style="font-size: 1.15rem; color: var(--dark); margin-bottom: 1rem;">📷 Photos</h2>
+        <div class="table-container" style="margin-bottom: 2rem;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Preview</th><th>Caption</th><th>Seconds</th>
+                        <th>Order</th><th>On home page</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for banner in photos %}
+                        <tr>
+                            <td class="image-cell" data-label="Preview">
+                                <img src="{{ banner.file.url }}" alt="{{ banner.title }}">
+                            </td>
+                            <td data-label="Caption">
+                                {% if banner.title %}<strong>{{ banner.title }}</strong><br>{% endif %}
+                                <span style="font-size: 0.85rem; color: #7f8c8d;">
+                                    {{ banner.subtitle|default:"No overlay text" }}
+                                </span>
+                            </td>
+                            <td data-label="Seconds">{{ banner.duration_seconds }}s</td>
+                            <td data-label="Order">{{ banner.display_order }}</td>
+                            <td data-label="On home page">
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="toggle">
+                                    <input type="hidden" name="banner_id" value="{{ banner.pk }}">
+                                    {% if banner.is_active %}
+                                        <button type="submit" class="btn btn-success btn-small">✔ Showing</button>
+                                    {% else %}
+                                        <button type="submit" class="btn btn-secondary btn-small"
+                                                style="background:#95a5a6;">Hidden</button>
+                                    {% endif %}
+                                </form>
+                            </td>
+                            <td data-label="Actions">
+                                <div class="action-buttons">
+                                    <a href="{% url 'dashboard:banner_edit' banner.pk %}" class="btn btn-secondary btn-small">Edit</a>
+                                    <a href="{% url 'dashboard:banner_delete' banner.pk %}" class="btn btn-danger btn-small">Delete</a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+
+    {% if videos %}
+        <h2 style="font-size: 1.15rem; color: var(--dark); margin-bottom: 1rem;">🎬 Videos</h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Preview</th><th>Caption</th><th>File</th>
+                        <th>Order</th><th>On home page</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for banner in videos %}
+                        <tr>
+                            <td class="image-cell" data-label="Preview">
+                                <video src="{{ banner.file.url }}" muted preload="metadata"
+                                       style="width:120px; height:68px; object-fit:cover; border-radius:4px; background:#000;"
+                                       controls></video>
+                            </td>
+                            <td data-label="Caption">
+                                {% if banner.title %}<strong>{{ banner.title }}</strong><br>{% endif %}
+                                <span style="font-size: 0.85rem; color: #7f8c8d;">
+                                    {{ banner.subtitle|default:"No overlay text" }}
+                                </span>
+                            </td>
+                            <td data-label="File">
+                                <span style="font-size: 0.85rem; color: #7f8c8d; word-break: break-all;">
+                                    {{ banner.file.name }}
+                                </span>
+                            </td>
+                            <td data-label="Order">{{ banner.display_order }}</td>
+                            <td data-label="On home page">
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="toggle">
+                                    <input type="hidden" name="banner_id" value="{{ banner.pk }}">
+                                    {% if banner.is_active %}
+                                        <button type="submit" class="btn btn-success btn-small">✔ Showing</button>
+                                    {% else %}
+                                        <button type="submit" class="btn btn-secondary btn-small"
+                                                style="background:#95a5a6;">Hidden</button>
+                                    {% endif %}
+                                </form>
+                            </td>
+                            <td data-label="Actions">
+                                <div class="action-buttons">
+                                    <a href="{% url 'dashboard:banner_edit' banner.pk %}" class="btn btn-secondary btn-small">Edit</a>
+                                    <a href="{% url 'dashboard:banner_delete' banner.pk %}" class="btn btn-danger btn-small">Delete</a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+{% else %}
+    <div class="empty-state">
+        <p style="font-size: 1.2rem; margin-bottom: 0.5rem;">🖼️ Nothing uploaded yet</p>
+        <p style="margin-bottom: 1.5rem;">
+            Upload the photos and videos you want under the header on the home page,
+            then switch on the ones to show.
+        </p>
+        <a href="{% url 'dashboard:banner_add' %}" class="btn">Upload Your First Photo / Video</a>
+    </div>
+{% endif %}
+{% endblock %}

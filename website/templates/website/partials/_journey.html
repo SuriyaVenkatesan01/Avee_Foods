@@ -1,0 +1,37 @@
+{% comment %}
+Farmer -> your home journey. Included on every page that shows products.
+
+Context:
+  stages       -- iterable of ProcessStage (required; renders nothing if empty)
+  journey_title, journey_lead -- optional heading overrides
+  compact      -- optional; hides the description text
+{% endcomment %}
+{% if stages %}
+<section class="journey" aria-labelledby="journey-heading">
+    <h2 class="section-title" id="journey-heading">
+        {{ journey_title|default:"From the farmer to your home" }}
+    </h2>
+    <p class="section-lead">
+        {{ journey_lead|default:"Every pack you receive has walked this exact path. No middlemen, no refining, no shortcuts." }}
+    </p>
+
+    <div class="journey-steps">
+        {% for stage in stages %}
+            <article class="journey-step">
+                <span class="journey-num">{{ forloop.counter }}</span>
+                <div class="journey-icon">{{ stage.icon|default:"•" }}</div>
+                <h3>{{ stage.title }}</h3>
+                {% if stage.subtitle %}
+                    <div class="journey-sub">{{ stage.subtitle }}</div>
+                {% endif %}
+                {% if stage.description and not compact %}
+                    <p>{{ stage.description }}</p>
+                {% endif %}
+                {% if stage.duration %}
+                    <span class="journey-duration">{{ stage.duration }}</span>
+                {% endif %}
+            </article>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}

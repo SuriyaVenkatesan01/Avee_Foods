@@ -1,0 +1,69 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Combos - Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">🎁 All Combos</h1>
+    <a href="{% url 'dashboard:combo_add' %}" class="btn">+ Add Combo</a>
+</div>
+
+{% if combos %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>Price</th>
+                    <th>Discount</th>
+                    <th>Products</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for combo in combos %}
+                    <tr>
+                        <td class="image-cell" data-label="Image">
+                            {% if combo.image %}
+                                <img src="{{ combo.image.url }}" alt="{{ combo.name }}">
+                            {% else %}
+                                <span style="color: #95a5a6;">No Image</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Name"><strong>{{ combo.name }}</strong></td>
+                        <td data-label="Price"><strong>₹{{ combo.price }}</strong></td>
+                        <td data-label="Discount">
+                            {% if combo.discount_percent %}
+                                <span style="background: #d1ecf1; padding: 0.25rem 0.75rem; border-radius: 4px;">-{{ combo.discount_percent }}%</span>
+                            {% else %}
+                                <span style="color: #95a5a6;">No Discount</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Products">{{ combo.products.count }} items</td>
+                        <td data-label="Status">
+                            {% if combo.is_active %}
+                                <span style="background: #d4edda; padding: 0.25rem 0.75rem; border-radius: 4px; color: #155724;">Active</span>
+                            {% else %}
+                                <span style="background: #f8d7da; padding: 0.25rem 0.75rem; border-radius: 4px; color: #721c24;">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Actions">
+                            <div class="action-buttons">
+                                <a href="{% url 'dashboard:combo_edit' combo.pk %}" class="btn btn-secondary btn-small">Edit</a>
+                                <a href="{% url 'dashboard:combo_delete' combo.pk %}" class="btn btn-danger btn-small">Delete</a>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="empty-state">
+        <p style="font-size: 1.2rem; margin-bottom: 1rem;">📭 No combos yet</p>
+        <a href="{% url 'dashboard:combo_add' %}" class="btn">Create Your First Combo</a>
+    </div>
+{% endif %}
+{% endblock %}

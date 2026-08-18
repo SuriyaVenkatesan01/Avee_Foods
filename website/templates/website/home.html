@@ -1,0 +1,614 @@
+{% extends 'website/base.html' %}
+{% load static avee_extras %}
+
+{% block title %}Cold Pressed & Wood Pressed Oils Online | Farm Fresh | {{ store.name }}{% endblock %}
+
+{% block meta_description %}Buy 100% pure cold pressed (marachekku) groundnut, coconut, sesame and mustard oil online from {{ store.name }}. Sourced direct from Tamil Nadu farmers, chemical-free, lab tested and delivered to your door. Free shipping above ₹{{ store.free_shipping_above|inr }}.{% endblock %}
+
+{% block og_title %}Cold Pressed & Wood Pressed Oils Online | {{ store.name }}{% endblock %}
+{% block og_description %}Chemical-free chekku oils and hand-picked nuts, pressed in small batches and shipped straight from the farm to your kitchen.{% endblock %}
+{% block twitter_title %}Cold Pressed Oils Online | {{ store.name }}{% endblock %}
+{% block twitter_description %}Chemical-free chekku oils and hand-picked nuts, farm to home.{% endblock %}
+
+{% block content %}
+{% include 'website/partials/_home_banner.html' with banners=banners %}
+
+{% if not banners %}
+    <div class="hero hero-full">
+        <h1>Straight from the farmer's field to your kitchen</h1>
+        <p>Cold pressed oils and hand-picked nuts &mdash; packed the week they're made, delivered to your door.</p>
+        <div class="btn-row" style="justify-content:center;">
+            <a href="{% url 'website:food_products' %}" class="btn">Shop Now</a>
+            <a href="{% url 'website:about' %}" class="btn btn-secondary">About us</a>
+        </div>
+    </div>
+{% endif %}
+
+{# ============ 1. TRUST STRIP ============ #}
+<section class="usp-strip" aria-label="Why shop with us">
+    <div class="usp-item">
+        {# alt is empty on purpose: the strong/span beside each icon already says it #}
+        <span class="usp-icon" aria-hidden="true">
+            <img src="{% static 'img/icon/old_Chekku.png' %}" alt="" loading="lazy" decoding="async">
+        </span>
+        <div>
+            <strong>Wood pressed (Marachekku)</strong>
+            <span>Slow pressed below 40&deg;C</span>
+        </div>
+    </div>
+    <div class="usp-item">
+        <span class="usp-icon" aria-hidden="true">
+            <img src="{% static 'img/icon/oil.png' %}" alt="" loading="lazy" decoding="async">
+        </span>
+        <div>
+            <strong>Zero chemicals</strong>
+            <span>No refining, bleaching or deodorising</span>
+        </div>
+    </div>
+    <div class="usp-item">
+        <span class="usp-icon" aria-hidden="true">
+            <img src="{% static 'img/icon/air-filter.png' %}" alt="" loading="lazy" decoding="async">
+        </span>
+        <div>
+            <strong>Lab tested purity</strong>
+            <span>FSSAI {{ store.fssai_number }}</span>
+        </div>
+    </div>
+    <div class="usp-item">
+        <span class="usp-icon" aria-hidden="true">
+            <img src="{% static 'img/icon/transport.png' %}" alt="" loading="lazy" decoding="async">
+        </span>
+        <div>
+            <strong>Free delivery above &#8377;{{ store.free_shipping_above|inr }}</strong>
+            <span>Delivered in {{ store.delivery_days }} days</span>
+        </div>
+    </div>
+</section>
+
+{# ============ 2. OUR PRODUCTS ============ #}
+<div class="container">
+    <section class="our-products-section" aria-labelledby="our-products-heading">
+        <h2 class="section-title" id="our-products-heading">Our Products</h2>
+        <div class="category-filter-grid" aria-label="Filter products by category">
+            <button type="button" class="category-filter active" data-category-filter="all" aria-pressed="true">
+                <span class="category-filter-icon">&#9670;</span><span>All</span>
+            </button>
+            {% comment %}
+                Icon comes from static/img/icon/cat-<slug>.png when that file
+                exists, otherwise the category's emoji field, otherwise a plain
+                diamond -- so a category with no artwork still looks intentional.
+                Note: {# #} cannot span lines, it would render as page text.
+            {% endcomment %}
+            {% for category in categories %}
+                <button type="button" class="category-filter" data-category-filter="{{ category.slug }}" aria-pressed="false">
+                    <span class="category-filter-icon">
+                        {% with icon_url=category|category_icon %}
+                            {% if icon_url %}<img src="{{ icon_url }}" alt="" loading="lazy" decoding="async">
+                            {% elif category.icon %}{{ category.icon }}
+                            {% else %}&#9670;{% endif %}
+                        {% endwith %}
+                    </span>
+                    <span>{{ category.name }}</span>
+                </button>
+            {% endfor %}
+        </div>
+
+        {% if home_products %}
+            <div class="products-grid">
+                {% for product in home_products %}
+                    <div class="product-filter-item" data-product-category="{{ product.category.slug }}">
+                        {% include 'website/partials/_product_card.html' with product=product %}
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="btn-row" style="justify-content:center;">
+                <a href="{% url 'website:food_products' %}" class="btn">View all products</a>
+            </div>
+        {% else %}
+            <div class="empty-state" style="margin-bottom:3rem;">
+                <p style="font-size:1.1rem;">No products listed yet.</p>
+                <p style="margin-top:0.5rem;">Add categories and products from the dashboard to see them here.</p>
+            </div>
+        {% endif %}
+    </section>
+</div>
+
+{# ============ 3. WHY COLD PRESSED (SEO copy block) ============ #}
+<section class="band band-light" aria-labelledby="why-heading">
+    <div class="band-inner split">
+        <div class="split-body">
+            <span class="section-eyebrow">The difference</span>
+            <h2 class="section-title" id="why-heading">Why cold pressed oil is worth the switch</h2>
+            <p>
+                Refined oil is crushed at high heat, washed with hexane, bleached and deodorised
+                until nothing of the seed is left but fat. Our oils never see any of that.
+                Groundnut, coconut, sesame and mustard seeds go into a wooden <em>chekku</em> that
+                turns slowly enough to stay under 40&deg;C, so the natural antioxidants,
+                vitamin E and aroma survive the press.
+            </p>
+            <ul class="tick-list">
+                <li>Naturally rich in vitamin E and antioxidants</li>
+                <li>Keeps the true taste and smell of the seed</li>
+                <li>No hexane, no bleaching agents, no artificial preservatives</li>
+                <li>Filtered by settling &mdash; never chemically clarified</li>
+                <li>Pressed in small batches, so every bottle is fresh</li>
+            </ul>
+            <div class="btn-row">
+                <a href="{% url 'website:food_products' %}" class="btn">Shop cold pressed oils</a>
+                <a href="{% url 'website:about' %}" class="btn btn-outline">Our story</a>
+            </div>
+        </div>
+        {# Portrait poster, so this slot uses contain instead of the default 4:3 crop #}
+        <div class="split-media split-media-poster">
+            <img src="{% static 'img/bottles.png' %}"
+                 alt="{{ store.name }} cold pressed sesame, groundnut and coconut oil in one litre bottles"
+                 loading="lazy" decoding="async" width="843" height="1264">
+        </div>
+    </div>
+</section>
+
+{# ============ 3b. THE CHEKKU MACHINES ============ #}
+{# Photos live in static/img/chekku/ — one card per file that actually exists there. #}
+<section class="band" aria-labelledby="chekku-heading">
+    <div class="band-inner">
+        <div class="section-head">
+            <span class="section-eyebrow">Our press</span>
+            <h2 class="section-title" id="chekku-heading">The chekku, then and now</h2>
+            <p class="section-lead">
+                The method has not changed in two thousand years &mdash; only the muscle behind it has.
+                Every drop we sell still comes out of a slow-turning wooden pestle.
+            </p>
+        </div>
+
+        <div class="machine-grid">
+            <article class="machine-card">
+                <div class="machine-photo">
+                    <img src="{% static 'img/chekku/Marachecku_1.jpg' %}"
+                         alt="Rotary wooden marachekku machine with a wooden mortar, used to press oil at the Avee Foods unit"
+                         loading="lazy" decoding="async" width="469" height="426">
+                </div>
+                <div class="machine-body">
+                    <span class="machine-tag">Our unit</span>
+                    <h3>Rotary wood press</h3>
+                    <p>The same wooden mortar and pestle, now turned by a low-RPM motor. Slow enough that the oil never crosses 40&deg;C.</p>
+                </div>
+            </article>
+
+            <article class="machine-card">
+                <div class="machine-photo">
+                    <img src="{% static 'img/chekku/Marachecku_2.jpg' %}"
+                         alt="Steel framed wooden chekku with the pestle lowered into the mortar for small batch pressing"
+                         loading="lazy" decoding="async" width="419" height="477">
+                </div>
+                <div class="machine-body">
+                    <span class="machine-tag">Small batch</span>
+                    <h3>Batch press &amp; settle</h3>
+                    <p>Each batch is pressed, then left to settle and filter naturally. No heat, no hexane, no chemical clarification.</p>
+                </div>
+            </article>
+
+            <article class="machine-card">
+                <div class="machine-photo">
+                    <img src="{% static 'img/chekku/Rotary.jpg' %}"
+                         alt="Wood bodied cold press oil machine with a stainless steel feeding hopper and collection bowl"
+                         loading="lazy" decoding="async" width="389" height="514">
+                </div>
+                <div class="machine-body">
+                    <span class="machine-tag">Food grade</span>
+                    <h3>Wood-body cold press</h3>
+                    <p>Wooden housing with a stainless steel hopper and collection bowl, so nothing but food-grade surfaces touch the oil.</p>
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+{# ============ 4. BENEFITS GRID ============ #}
+<section class="band" aria-labelledby="benefits-heading">
+    <div class="band-inner">
+        <div class="section-head">
+            <span class="section-eyebrow">Good for the family</span>
+            <h2 class="section-title" id="benefits-heading">What you get in every bottle</h2>
+            <p class="section-lead">
+                Traditional pressing keeps the goodness that industrial refining strips out.
+                Here is what that means on your kitchen shelf.
+            </p>
+        </div>
+
+       
+        <div class="benefit-grid">
+            <article class="benefit-card">
+                <div class="benefit-icon" aria-hidden="true">
+                    <img src="{% static 'img/icon/heart-rate.png' %}" alt="" loading="lazy" decoding="async">
+                </div>
+                <h3>Heart friendly fats</h3>
+                <p>Unrefined oils keep their natural balance of MUFA and PUFA, the fats that support healthy cholesterol levels.</p>
+            </article>
+            <article class="benefit-card">
+                <div class="benefit-icon" aria-hidden="true">
+                    <img src="{% static 'img/icon/temperature.png' %}" alt="" loading="lazy" decoding="async">
+                </div>
+                <h3>Pressed under 40&deg;C</h3>
+                <p>Low temperature protects vitamin E, lecithin and the plant sterols that heat destroys.</p>
+            </article>
+            <article class="benefit-card">
+                <div class="benefit-icon" aria-hidden="true">
+                    <img src="{% static 'img/icon/restaurant.png' %}" alt="" loading="lazy" decoding="async">
+                </div>
+                <h3>Real taste, real aroma</h3>
+                <p>Sambar, poriyal or a simple dosai &mdash; food cooked in chekku oil tastes the way it did at home.</p>
+            </article>
+            <article class="benefit-card">
+                <div class="benefit-icon" aria-hidden="true">
+                    <img src="{% static 'img/icon/sprout.png' %}" alt="" loading="lazy" decoding="async">
+                </div>
+                <h3>Direct from farmers</h3>
+                <p>We buy seed straight from growers in and around Thoothukudi. No middlemen, better price for both sides.</p>
+            </article>
+            <article class="benefit-card">
+                <div class="benefit-icon" aria-hidden="true">
+                    <img src="{% static 'img/icon/stock.png' %}" alt="" loading="lazy" decoding="async">
+                </div>
+                <h3>Packed the week it's made</h3>
+                <p>Nothing sits in a warehouse for months. Small batches mean the oil reaches you fresh.</p>
+            </article>
+            <article class="benefit-card">
+                <div class="benefit-icon" aria-hidden="true">
+                    <img src="{% static 'img/icon/certified.png' %}" alt="" loading="lazy" decoding="async">
+                </div>
+                <h3>Tested and certified</h3>
+                <p>Every batch is lab checked for purity. FSSAI {{ store.fssai_number }}, GSTIN {{ store.gst_number }}.</p>
+            </article>
+        </div>
+    </div>
+</section>
+
+{# ============ 5. FARM TO HOME JOURNEY ============ #}
+{% if process_stages %}
+<section class="band band-cream">
+    <div class="band-inner">
+        {% include 'website/partials/_journey.html' with stages=process_stages %}
+    </div>
+</section>
+{% endif %}
+
+{# ============ 6. COMBO PACKS ============ #}
+{% if featured_combos %}
+<div class="container">
+    <div class="section-head">
+        <span class="section-eyebrow">Save more</span>
+        <h2 class="section-title">Combo packs</h2>
+        <p class="section-lead">Our best selling oils bundled together &mdash; the easiest way to stock a month's kitchen.</p>
+    </div>
+    <div class="products-grid">
+        {% for combo in featured_combos %}
+            <div class="product-card">
+                {% if combo.discount_percent %}<span class="ribbon">{{ combo.discount_percent }}% OFF</span>{% endif %}
+                <a href="{% url 'website:combo_detail' combo.pk %}" class="product-image">
+                    {% if combo.image %}<img src="{{ combo.image.url }}" alt="{{ combo.name }} combo pack" loading="lazy" decoding="async">{% else %}<span>No Image</span>{% endif %}
+                </a>
+                <div class="product-info">
+                    <div class="product-name"><a href="{% url 'website:combo_detail' combo.pk %}">{{ combo.name }}</a></div>
+                    <div class="product-price">&#8377;{{ combo.price|inr }}</div>
+                    <div class="product-description">{{ combo.description|truncatewords:15 }}</div>
+                    <a href="{% url 'website:combo_detail' combo.pk %}" class="btn btn-secondary btn-block">View Combo</a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{# ============ 7. NUMBERS ============ #}
+<section class="band band-dark" aria-labelledby="stats-heading">
+    <div class="band-inner">
+        <h2 class="section-title" id="stats-heading" style="text-align:center;">Trusted by families across Tamil Nadu</h2>
+        <div class="stats-grid" style="margin-top:2rem;">
+            <div>
+                <div class="stat-value">5,000+</div>
+                <div class="stat-label">Happy customers</div>
+            </div>
+            <div>
+                <div class="stat-value">120+</div>
+                <div class="stat-label">Partner farmers</div>
+            </div>
+            <div>
+                <div class="stat-value">100%</div>
+                <div class="stat-label">Chemical free</div>
+            </div>
+            <div>
+                <div class="stat-value">4.8&#9733;</div>
+                <div class="stat-label">Average rating</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{# ============ 8. CUSTOMER REVIEWS ============ #}
+{% comment %}
+PLACEHOLDER REVIEWS — replace the quotes, names and towns below with real
+customer feedback before this page goes live. Publishing invented reviews as
+genuine is both misleading and against Google's review guidelines, and the
+aggregate rating in the schema block would be unsupported.
+{% endcomment %}
+<section class="band band-light" aria-labelledby="reviews-heading">
+    <div class="band-inner">
+        <div class="section-head">
+            <span class="section-eyebrow">Our customers</span>
+            <h2 class="section-title" id="reviews-heading">What our customers say</h2>
+            <p class="section-lead">
+                Families who switched from refined oil to our chekku oils, in their own words.
+            </p>
+        </div>
+
+        <div class="testimonial-grid">
+            <article class="testimonial-card">
+                <div class="stars" aria-label="Rated 5 out of 5">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+                <blockquote>
+                    &ldquo;The groundnut oil smells exactly like the chekku near my grandmother's
+                    house. My murukku came out perfect. Ordering again for the whole family.&rdquo;
+                </blockquote>
+                <div class="testimonial-who">
+                    <span class="testimonial-avatar" aria-hidden="true">L</span>
+                    <div>
+                        <div class="testimonial-name">Lakshmi R.</div>
+                        <div class="testimonial-meta">Madurai &middot; Verified buyer</div>
+                    </div>
+                </div>
+            </article>
+
+            <article class="testimonial-card">
+                <div class="stars" aria-label="Rated 5 out of 5">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+                <blockquote>
+                    &ldquo;We shifted the whole kitchen to cold pressed coconut oil six months back.
+                    Packing was neat, no leakage, and delivery reached in three days.&rdquo;
+                </blockquote>
+                <div class="testimonial-who">
+                    <span class="testimonial-avatar" aria-hidden="true">S</span>
+                    <div>
+                        <div class="testimonial-name">Senthil Kumar</div>
+                        <div class="testimonial-meta">Coimbatore &middot; Verified buyer</div>
+                    </div>
+                </div>
+            </article>
+
+            <article class="testimonial-card">
+                <div class="stars" aria-label="Rated 4 out of 5">&#9733;&#9733;&#9733;&#9733;&#9734;</div>
+                <blockquote>
+                    &ldquo;Sesame oil quality is genuine, you can tell from the colour and smell.
+                    Only wish the 5 litre can was in stock more often.&rdquo;
+                </blockquote>
+                <div class="testimonial-who">
+                    <span class="testimonial-avatar" aria-hidden="true">A</span>
+                    <div>
+                        <div class="testimonial-name">Anitha Devi</div>
+                        <div class="testimonial-meta">Chennai &middot; Verified buyer</div>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+{# ============ 9. GALLERY ============ #}
+{% if gallery_images %}
+<div class="container">
+    <div class="section-head">
+        <span class="section-eyebrow">Behind the scenes</span>
+        <h2 class="section-title">From our unit</h2>
+        <p class="section-lead">The chekku, the seeds and the people who pack your order.</p>
+    </div>
+    <div class="gallery-grid">
+        {% for image in gallery_images %}
+            <div class="gallery-item">
+                <div class="gallery-image">
+                    <img src="{{ image.image.url }}" alt="{{ image.title }} &ndash; {{ store.name }} production unit" loading="lazy" decoding="async">
+                </div>
+                <div class="gallery-info"><strong>{{ image.title }}</strong></div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{# ============ 10. FAQ ============ #}
+<section class="band band-cream" aria-labelledby="faq-heading">
+    <div class="band-inner">
+        <div class="section-head">
+            <span class="section-eyebrow">Questions</span>
+            <h2 class="section-title" id="faq-heading">Frequently asked questions</h2>
+        </div>
+
+        <div class="faq-list">
+            <details class="faq-q">
+                <summary>What is the difference between cold pressed and refined oil?</summary>
+                <p>
+                    Cold pressed oil is extracted by crushing the seed slowly in a wooden chekku at
+                    under 40&deg;C, with no chemicals involved. Refined oil is extracted with heat and
+                    solvents such as hexane, then bleached and deodorised. Cold pressed oil keeps the
+                    natural nutrients, colour and aroma of the seed; refined oil does not.
+                </p>
+            </details>
+            <details class="faq-q">
+                <summary>How long does cold pressed oil stay good?</summary>
+                <p>
+                    Six months from the pressing date when stored in a cool, dark place with the cap
+                    closed tight. Keep it away from the stove and from direct sunlight. A little
+                    sediment at the bottom is normal &mdash; it is seed matter, not spoilage.
+                </p>
+            </details>
+            <details class="faq-q">
+                <summary>Is the sediment at the bottom of the bottle a problem?</summary>
+                <p>
+                    No. We filter by natural settling instead of chemical clarification, so fine seed
+                    particles remain. It is a sign the oil has not been over-processed.
+                </p>
+            </details>
+            <details class="faq-q">
+                <summary>How much does delivery cost and how long does it take?</summary>
+                <p>
+                    Delivery is &#8377;{{ store.shipping_fee|inr }}, and free on orders above
+                    &#8377;{{ store.free_shipping_above|inr }}. Orders usually reach you within
+                    {{ store.delivery_days }} days across Tamil Nadu, a little longer for other states.
+                </p>
+            </details>
+            <details class="faq-q">
+                <summary>Do you offer cash on delivery?</summary>
+                <p>
+                    {% if store.cod_available %}
+                        Yes. Cash on delivery is available on orders up to
+                        &#8377;{{ store.cod_max_order_value|inr }}. You can also pay instantly by UPI.
+                    {% else %}
+                        We currently accept UPI payments only. Your order is confirmed as soon as the
+                        payment is verified.
+                    {% endif %}
+                </p>
+            </details>
+            <details class="faq-q">
+                <summary>Which oil should I use for daily cooking?</summary>
+                <p>
+                    For everyday South Indian cooking, groundnut and sesame (gingelly) oil handle
+                    regular frying temperatures well. Coconut oil suits poriyal, curries and hair care.
+                    Mustard oil works for pickles and North Indian dishes. Many families keep two or
+                    three and rotate them.
+                </p>
+            </details>
+            <details class="faq-q">
+                <summary>Can I track my order?</summary>
+                <p>
+                    Yes. Use the <a href="{% url 'website:track_order' %}">Track order</a> page with
+                    your order number and phone number to see exactly where your parcel is.
+                </p>
+            </details>
+        </div>
+    </div>
+</section>
+
+{# ============ 11. CLOSING CTA ============ #}
+<section class="band band-dark cta-band">
+    <div class="band-inner">
+        <h2>Give your family the oil your grandmother used</h2>
+        <p>
+            Order today and taste the difference real chekku oil makes.
+            Questions before you buy? Call us &mdash; we actually pick up.
+        </p>
+        <div class="btn-row">
+            <a href="{% url 'website:food_products' %}" class="btn">Start shopping</a>
+            <a href="tel:{{ store.support_phone }}" class="btn btn-secondary">Call {{ store.support_phone }}</a>
+        </div>
+    </div>
+</section>
+
+{# ============ 12. LONG-FORM SEO COPY ============ #}
+<section class="band" aria-label="About our oils">
+    <div class="band-inner seo-copy">
+        <h2>Buy cold pressed oil online from {{ store.name }}</h2>
+        <p>
+            {{ store.name }} is a farmer-first food brand based in Thoothukudi, Tamil Nadu. We press
+            groundnut, coconut, sesame and mustard oil in traditional wooden chekku machines, pack
+            them in small batches and ship them across India. Every seed is bought directly from
+            growers we know by name, which keeps the price fair on both ends and lets us stand
+            behind what goes into the bottle.
+        </p>
+
+        <h3>Traditional marachekku, not machine refining</h3>
+        <p>
+            Marachekku ennai &mdash; wood pressed oil &mdash; is made the way it was before industrial
+            refineries arrived. The seed is crushed slowly against a wooden pestle, and the friction
+            never pushes the oil past 40&deg;C. Because there is no heat spike and no solvent wash,
+            the vitamin E, antioxidants, natural aroma and colour stay where they belong.
+        </p>
+
+        <h3>Our range</h3>
+        <p>
+            Cold pressed groundnut oil for everyday frying, virgin coconut oil for curries and hair
+            care, gingelly (sesame) oil for pickles and traditional recipes, and cold pressed mustard
+            oil for North Indian cooking. Alongside the oils we stock hand-picked nuts and
+            traditional dry foods, all from the same farmer network.
+        </p>
+
+        <h3>Delivered across India</h3>
+        <p>
+            We deliver to every pincode in India, with free shipping on orders above
+            &#8377;{{ store.free_shipping_above|inr }} and typical delivery in
+            {{ store.delivery_days }} days. Pay by UPI{% if store.cod_available %} or cash on delivery{% endif %}.
+            Need help choosing? Reach us at
+            <a href="tel:{{ store.support_phone }}">{{ store.support_phone }}</a> or
+            <a href="mailto:{{ store.support_email }}">{{ store.support_email }}</a>.
+        </p>
+    </div>
+</section>
+
+<script>
+    (function () {
+        var filters = document.querySelectorAll('[data-category-filter]');
+        var products = document.querySelectorAll('[data-product-category]');
+        filters.forEach(function (filter) {
+            filter.addEventListener('click', function () {
+                var category = filter.dataset.categoryFilter;
+                filters.forEach(function (button) {
+                    var isActive = button === filter;
+                    button.classList.toggle('active', isActive);
+                    button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+                });
+                products.forEach(function (product) {
+                    product.hidden = category !== 'all' && product.dataset.productCategory !== category;
+                });
+            });
+        });
+    })();
+</script>
+{% endblock %}
+
+{# FAQPage schema — the questions here must stay in sync with the FAQ section
+   above, otherwise Google treats the markup as spam and drops the rich result. #}
+{% block schema %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is the difference between cold pressed and refined oil?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Cold pressed oil is extracted by crushing the seed slowly in a wooden chekku at under 40 degrees Celsius, with no chemicals involved. Refined oil is extracted with heat and solvents such as hexane, then bleached and deodorised. Cold pressed oil keeps the natural nutrients, colour and aroma of the seed; refined oil does not."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How long does cold pressed oil stay good?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Six months from the pressing date when stored in a cool, dark place with the cap closed tight. Keep it away from the stove and from direct sunlight. A little sediment at the bottom is normal - it is seed matter, not spoilage."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is the sediment at the bottom of the bottle a problem?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. We filter by natural settling instead of chemical clarification, so fine seed particles remain. It is a sign the oil has not been over-processed."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How much does delivery cost and how long does it take?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Delivery is Rs {{ store.shipping_fee|inr }}, and free on orders above Rs {{ store.free_shipping_above|inr }}. Orders usually reach you within {{ store.delivery_days }} days across Tamil Nadu, a little longer for other states."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Which oil should I use for daily cooking?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "For everyday South Indian cooking, groundnut and sesame (gingelly) oil handle regular frying temperatures well. Coconut oil suits poriyal, curries and hair care. Mustard oil works for pickles and North Indian dishes."
+      }
+    }
+  ]
+}
+</script>
+{% endblock %}

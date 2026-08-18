@@ -1,0 +1,106 @@
+{% extends 'website/base.html' %}
+
+{% block title %}About - Avee Foods{% endblock %}
+
+{% block content %}
+<div class="container page-centered">
+    <h1 class="page-title">About Avee Foods</h1>
+    
+    <div class="detail-section" style="margin-bottom: 3rem;">
+        <div class="detail-grid" style="margin-bottom: 0;">
+            <div>
+                <h2 class="section-title">Who We Are</h2>
+                <p style="line-height: 1.8; margin-bottom: 1rem;">
+                    Avee Foods is a leading food company dedicated to providing the highest quality food products to our customers. With years of experience in the food industry, we have built a reputation for excellence, quality, and customer satisfaction.
+                </p>
+                <p style="line-height: 1.8; margin-bottom: 1rem;">
+                    Our mission is to deliver delicious and healthy food options that bring families and friends together.
+                </p>
+            </div>
+            <div class="info-panel">
+                <div style="text-align: center; padding: 2rem 0;">
+                    <h3 style="font-size: 2rem; color: var(--accent-text); margin-bottom: 0.5rem;">5000+</h3>
+                    <p>Happy Customers</p>
+                </div>
+                <div style="text-align: center; padding: 2rem 0; border-top: 1px solid var(--border);">
+                    <h3 style="font-size: 2rem; color: var(--accent-text); margin-bottom: 0.5rem;">50+</h3>
+                    <p>Product Varieties</p>
+                </div>
+                <div style="text-align: center; padding: 2rem 0; border-top: 1px solid var(--border);">
+                    <h3 style="font-size: 2rem; color: var(--accent-text); margin-bottom: 0.5rem;">10+</h3>
+                    <p>Years Experience</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-bottom: 3rem;">
+        {% include 'website/partials/_journey.html' with stages=process_stages %}
+    </div>
+
+    {% if categories %}
+        <div class="detail-section" style="margin-bottom: 3rem;">
+            <h2 class="section-title">What We Make</h2>
+            <div class="pill-row" style="margin-bottom:0;">
+                {% for category in categories %}
+                    <a href="{{ category.get_absolute_url }}" class="pill">{{ category.icon }} {{ category.name }}</a>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="detail-section" style="margin-bottom: 3rem;">
+        <h2 class="section-title">Our Mission</h2>
+        <p style="line-height: 1.8;">
+            To provide delicious, high-quality food products that meet the nutritional needs and preferences of our diverse customers. We are committed to using the finest ingredients, maintaining the highest hygiene standards, and delivering exceptional customer service.
+        </p>
+    </div>
+
+    <div class="detail-section" style="margin-bottom: 3rem;">
+        <h2 class="section-title">Our Values</h2>
+        <div class="auto-grid">
+            <div class="info-panel" style="text-align: center;">
+                <h3 style="color: var(--accent-text); margin-bottom: 0.5rem;">Quality</h3>
+                <p>We guarantee the highest quality in every product we deliver.</p>
+            </div>
+            <div class="info-panel" style="text-align: center;">
+                <h3 style="color: var(--accent-text); margin-bottom: 0.5rem;">Integrity</h3>
+                <p>We conduct our business with honesty and transparency.</p>
+            </div>
+            <div class="info-panel" style="text-align: center;">
+                <h3 style="color: var(--accent-text); margin-bottom: 0.5rem;">Innovation</h3>
+                <p>We continuously innovate to bring new and exciting products.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-section">
+        <h2 class="section-title">Contact Us</h2>
+        <div class="auto-grid">
+            <div>
+                <h3 style="margin-bottom: 0.5rem;">📍 Location</h3>
+                <p>{{ store.address }}</p>
+            </div>
+            <div>
+                <h3 style="margin-bottom: 0.5rem;">📞 Contact</h3>
+                <p>
+                    Phone: <a href="tel:{{ store.support_phone }}">{{ store.support_phone }}</a><br>
+                    Email: <a href="mailto:{{ store.support_email }}">{{ store.support_email }}</a>
+                </p>
+                <p style="margin-top:0.5rem; font-size:0.85rem; color:var(--muted);">
+                    FSSAI: {{ store.fssai_number }} · GSTIN: {{ store.gst_number }}
+                </p>
+            </div>
+        </div>
+        <div style="margin-top: 2rem;">
+            <h3 style="margin-bottom: 1rem;">📧 Get in Touch</h3>
+            <form class="contact-form">
+                <input type="text" placeholder="Your Name" aria-label="Your Name">
+                <input type="email" placeholder="Your Email" aria-label="Your Email">
+                <textarea placeholder="Your Message" rows="5" aria-label="Your Message"></textarea>
+                <button type="submit" class="btn" style="justify-self: start;">Send Message</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

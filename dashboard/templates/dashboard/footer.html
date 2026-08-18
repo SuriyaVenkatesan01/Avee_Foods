@@ -1,0 +1,10 @@
+{% load static %}
+<footer>
+    <img class="footer-logo" src="{% static 'img/logo-192.png' %}" alt="Avee Foods logo" width="192" height="192">
+    <p>&copy; 2026 <strong>Avee Foods</strong> - Admin Dashboard. All rights reserved.</p>
+    <p>Manage your products, combos, and gallery with ease.</p>
+    <div class="footer-links">
+        <a href="{% url 'website:home' %}">← Back to Website</a>
+        <a href="{% url 'dashboard:home' %}">Dashboard</a>
+    </div>
+</footer>

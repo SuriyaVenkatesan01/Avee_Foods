@@ -1,0 +1,104 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Orders - Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">🧾 Orders</h1>
+</div>
+
+<div class="panel" style="margin-bottom: 1.5rem;">
+    <form method="get" style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+        <input type="search" name="q" value="{{ query }}"
+               placeholder="Order no., name, phone, PIN, tracking…"
+               style="flex: 1 1 240px;" aria-label="Search orders">
+
+        <select name="status" style="flex: 1 1 180px;" aria-label="Filter by order status">
+            <option value="">All statuses</option>
+            <option value="open" {% if selected_status == 'open' %}selected{% endif %}>Open (not delivered)</option>
+            {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="payment" style="flex: 1 1 180px;" aria-label="Filter by payment status">
+            <option value="">All payments</option>
+            {% for value, label in payment_choices %}
+                <option value="{{ value }}" {% if selected_payment == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" class="btn btn-small">Filter</button>
+        {% if query or selected_status or selected_payment %}
+            <a href="{% url 'dashboard:orders_list' %}" class="btn btn-secondary btn-small">Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+{% if orders %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Order</th>
+                    <th>Customer</th>
+                    <th>Deliver to</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Payment</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                    <tr>
+                        <td data-label="Order">
+                            <strong>{{ order.order_number }}</strong><br>
+                            <span style="font-size: 0.85rem; color: #7f8c8d;">{{ order.placed_at|date:"d M Y, g:i a" }}</span>
+                        </td>
+                        <td data-label="Customer">
+                            {{ order.full_name }}<br>
+                            <a href="tel:{{ order.phone }}" style="font-size: 0.85rem;">{{ order.phone }}</a>
+                        </td>
+                        <td data-label="Deliver to">
+                            {{ order.city }}<br>
+                            <span style="font-size: 0.85rem; color: #7f8c8d;">{{ order.state }} - {{ order.pincode }}</span>
+                        </td>
+                        <td data-label="Items">
+                            {% for item in order.items.all %}
+                                <div style="font-size: 0.85rem;">{{ item.product_name }} · {{ item.variant_label }} × {{ item.quantity }}</div>
+                            {% endfor %}
+                        </td>
+                        <td data-label="Total"><strong>₹{{ order.total }}</strong></td>
+                        <td data-label="Payment">
+                            {{ order.get_payment_method_display }}<br>
+                            {% if order.payment_status == 'paid' %}
+                                <span style="background:#d4edda; color:#155724; padding:0.15rem 0.6rem; border-radius:4px; font-size:0.8rem;">Paid</span>
+                            {% elif order.payment_status == 'awaiting_verification' %}
+                                <span style="background:#fff3cd; color:#856404; padding:0.15rem 0.6rem; border-radius:4px; font-size:0.8rem;">Verify</span>
+                            {% elif order.payment_status == 'failed' %}
+                                <span style="background:#f8d7da; color:#721c24; padding:0.15rem 0.6rem; border-radius:4px; font-size:0.8rem;">Failed</span>
+                            {% else %}
+                                <span style="background:#ecf0f1; color:#7f8c8d; padding:0.15rem 0.6rem; border-radius:4px; font-size:0.8rem;">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Status">{{ order.status_icon }} {{ order.get_status_display }}</td>
+                        <td data-label="Actions">
+                            <div class="action-buttons">
+                                <a href="{% url 'dashboard:order_detail' order.order_number %}" class="btn btn-secondary btn-small">Manage</a>
+                                <a href="{% url 'dashboard:order_invoice' order.order_number %}" class="btn btn-small" target="_blank">Invoice</a>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="empty-state">
+        <p style="font-size: 1.2rem; margin-bottom: 0.5rem;">🧾 No orders match this filter</p>
+        <p>Orders appear here the moment a customer completes checkout.</p>
+    </div>
+{% endif %}
+{% endblock %}

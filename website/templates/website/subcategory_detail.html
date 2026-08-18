@@ -1,0 +1,55 @@
+{% extends 'website/base.html' %}
+
+{% block title %}{{ subcategory.name }} - {{ category.name }} - Avee Foods{% endblock %}
+{% block meta_description %}{{ subcategory.name }} from Avee Foods — cold pressed and packed fresh, in every size.{% endblock %}
+
+{% block content %}
+<div class="container">
+    <p style="font-size:0.88rem; color:var(--muted); margin-bottom:1rem;">
+        <a href="{% url 'website:home' %}">Home</a> ›
+        <a href="{% url 'website:food_products' %}">Products</a> ›
+        <a href="{{ category.get_absolute_url }}">{{ category.name }}</a> ›
+        {{ subcategory.name }}
+    </p>
+
+    <h1 class="page-title">{{ category.icon }} {{ subcategory.name }}</h1>
+
+    {# Jump straight to a sibling without going back up to the category #}
+    {% if siblings %}
+        <div class="pill-row sub-pill-row">
+            <span class="pill-label">{{ category.name }}:</span>
+            <a href="{{ category.get_absolute_url }}" class="pill pill-sub">All</a>
+            {% for sib in siblings %}
+                <a href="{{ sib.get_absolute_url }}"
+                   class="pill pill-sub {% if sib.pk == subcategory.pk %}active{% endif %}">
+                    {{ sib.name }}
+                </a>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if subcategory.image %}
+        <div class="detail-section" style="margin-bottom:2rem;">
+            <img src="{{ subcategory.image.url }}" alt="{{ subcategory.name }}"
+                 style="width:100%; height:clamp(180px, 30vw, 300px); object-fit:cover; border-radius:8px;">
+        </div>
+    {% endif %}
+
+    {% if products %}
+        <div class="products-grid">
+            {% for product in products %}
+                {% include 'website/partials/_product_card.html' with product=product %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state" style="margin-bottom:3rem;">
+            <p style="font-size:1.1rem;">📭 Nothing listed under {{ subcategory.name }} yet.</p>
+            <a href="{{ category.get_absolute_url }}" class="btn btn-outline btn-small" style="margin-top:1rem;">
+                Back to {{ category.name }}
+            </a>
+        </div>
+    {% endif %}
+
+    {% include 'website/partials/_journey.html' with stages=process_stages compact=1 %}
+</div>
+{% endblock %}

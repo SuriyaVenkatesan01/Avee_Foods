@@ -1,0 +1,122 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Products - Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">🍶 All Products</h1>
+    <a href="{% url 'dashboard:product_add' %}" class="btn">+ Add Product</a>
+</div>
+
+<div class="panel" style="margin-bottom: 1.5rem;">
+    <form method="get" style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+        <input type="search" name="q" value="{{ query }}" placeholder="Search by name…"
+               style="flex: 1 1 220px;" aria-label="Search products">
+        <select name="category" style="flex: 1 1 180px;" aria-label="Filter by category">
+            <option value="">All categories</option>
+            {% for category in categories %}
+                <option value="{{ category.slug }}" {% if selected_category == category.slug %}selected{% endif %}>
+                    {{ category.icon }} {{ category.name }}
+                </option>
+            {% endfor %}
+        </select>
+        <select name="subcategory" style="flex: 1 1 180px;" aria-label="Filter by subcategory">
+            <option value="">All subcategories</option>
+            {% for sub in subcategories %}
+                <option value="{{ sub.pk }}" {% if selected_subcategory == sub.pk|stringformat:"s" %}selected{% endif %}>
+                    {{ sub.category.name }} › {{ sub.name }}
+                </option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-small">Filter</button>
+        {% if query or selected_category or selected_subcategory %}
+            <a href="{% url 'dashboard:products_list' %}" class="btn btn-secondary btn-small">Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+{% if products %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Pack sizes</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                    <tr>
+                        <td class="image-cell" data-label="Image">
+                            {% if product.image %}
+                                <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                            {% else %}
+                                <span style="color: #95a5a6;">No Image</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Name">
+                            <strong>{{ product.name }}</strong>
+                            {% if product.is_featured %}
+                                <span style="background:#fff3cd; color:#856404; padding:0.1rem 0.5rem; border-radius:4px; font-size:0.75rem;">★ Featured</span>
+                            {% endif %}
+                            <br>
+                            <span style="font-size: 0.85rem; color: #7f8c8d;">/{{ product.slug }}</span>
+                        </td>
+                        <td data-label="Category">
+                            {% if product.category %}
+                                <span style="background: #d1ecf1; padding: 0.25rem 0.75rem; border-radius: 4px;">
+                                    {{ product.category.icon }} {{ product.category.name }}
+                                </span>
+                                {% if product.subcategory %}
+                                    <br>
+                                    <span style="font-size: 0.85rem; color: #7f8c8d;">
+                                        ↳ {{ product.subcategory.name }}
+                                    </span>
+                                {% endif %}
+                            {% else %}
+                                <span style="color: #c0392b;">Not set</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Pack sizes">
+                            {% if product.variant_total %}
+                                {% for variant in product.variants.all %}
+                                    <span style="display:inline-block; background:#ecf0f1; padding:0.15rem 0.5rem; border-radius:999px; font-size:0.8rem; margin:0.1rem 0;">
+                                        {{ variant.label }} · ₹{{ variant.price }} · {{ variant.stock }} left
+                                    </span>
+                                {% endfor %}
+                            {% else %}
+                                <span style="color: #c0392b; font-weight: bold;">⚠ No pack size — not sellable</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Price"><strong>₹{{ product.display_price }}</strong></td>
+                        <td data-label="Status">
+                            {% if product.is_active %}
+                                <span style="background: #d4edda; padding: 0.25rem 0.75rem; border-radius: 4px; color: #155724;">Active</span>
+                            {% else %}
+                                <span style="background: #f8d7da; padding: 0.25rem 0.75rem; border-radius: 4px; color: #721c24;">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Actions">
+                            <div class="action-buttons">
+                                <a href="{% url 'dashboard:product_edit' product.pk %}" class="btn btn-secondary btn-small">Edit</a>
+                                <a href="{% url 'dashboard:product_delete' product.pk %}" class="btn btn-danger btn-small">Delete</a>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="empty-state">
+        <p style="font-size: 1.2rem; margin-bottom: 0.5rem;">📭 No products found</p>
+        <p style="margin-bottom: 1.5rem;">Add a category first, then create the product with its pack sizes.</p>
+        <a href="{% url 'dashboard:product_add' %}" class="btn">Add Your First Product</a>
+    </div>
+{% endif %}
+{% endblock %}

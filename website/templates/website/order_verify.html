@@ -1,0 +1,29 @@
+{% extends 'website/base.html' %}
+
+{% block title %}Verify order {{ order_number }} - Avee Foods{% endblock %}
+
+{% block content %}
+<div class="container container-narrow">
+    <h1 class="page-title">🔒 Confirm it's your order</h1>
+    <p class="section-lead">
+        For your privacy, enter the mobile number used to place order
+        <strong>{{ order_number }}</strong>.
+    </p>
+
+    <div class="detail-section">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="form-field" style="max-width:360px;">
+                <label for="phone" class="required">Mobile number</label>
+                <input type="tel" id="phone" name="phone" class="field-input" inputmode="numeric"
+                       maxlength="10" placeholder="10 digit mobile number" required>
+            </div>
+            <button type="submit" class="btn" style="margin-top:1.25rem;">View my order</button>
+        </form>
+    </div>
+
+    <div class="btn-row" style="margin-top:1.5rem;">
+        <a href="{% url 'website:track_order' %}" class="btn btn-outline">Track a different order</a>
+    </div>
+</div>
+{% endblock %}

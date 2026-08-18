@@ -1,0 +1,45 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}{% if gallery %}Edit{% else %}Upload{% endif %} Image - Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">
+        {% if gallery %}✏️ Edit Image: {{ gallery.title }}{% else %}📸 Upload New Image{% endif %}
+    </h1>
+</div>
+
+<div class="form-container">
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="title">Title *</label>
+            <input type="text" id="title" name="title" value="{{ data.title }}" required>
+            {% if errors.title %}<small style="color:#c0392b;">{{ errors.title }}</small>{% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" rows="3">{{ data.description }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="image">Image {% if not gallery %}*{% endif %}</label>
+            <input type="file" id="image" name="image" accept="image/*">
+            {% if errors.image %}<small style="color:#c0392b;">{{ errors.image }}</small>{% endif %}
+            {% if gallery and gallery.image %}
+                <div style="margin-top: 1rem;">
+                    <strong>Current Image:</strong>
+                    <img src="{{ gallery.image.url }}" alt="{{ gallery.title }}" class="image-preview">
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="form-buttons">
+            <button type="submit" class="btn">{% if gallery %}Update Image{% else %}Upload Image{% endif %}</button>
+            <a href="{% url 'dashboard:gallery_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

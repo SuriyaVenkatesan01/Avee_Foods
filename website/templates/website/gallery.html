@@ -1,0 +1,35 @@
+{% extends 'website/base.html' %}
+
+{% block title %}Gallery - Avee Foods{% endblock %}
+
+{% block content %}
+<div class="container page-centered">
+    <h1 class="page-title">Photo Gallery</h1>
+    <p class="section-lead">Check out our delicious food in action!</p>
+    
+    {% if gallery_images %}
+        <div class="gallery-grid">
+            {% for image in gallery_images %}
+                <div class="gallery-item">
+                    <div class="gallery-image">
+                        {% if image.image %}
+                            <img src="{{ image.image.url }}" alt="{{ image.title }}">
+                        {% else %}
+                            <span>No Image</span>
+                        {% endif %}
+                    </div>
+                    <div class="gallery-info">
+                        <h3 style="margin-bottom: 0.5rem;">{{ image.title }}</h3>
+                        {% if image.description %}
+                            <p style="color: #666; font-size: 0.9rem;">{{ image.description }}</p>
+                        {% endif %}
+                        <small style="color: #95a5a6;">{{ image.created_at|date:"d M Y" }}</small>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No gallery images available yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

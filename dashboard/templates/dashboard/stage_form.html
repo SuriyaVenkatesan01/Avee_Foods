@@ -1,0 +1,98 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}{% if stage %}Edit{% else %}Add{% endif %} Process Stage - Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">
+        {% if stage %}✏️ Edit Stage: {{ stage.title }}{% else %}➕ Add Process Stage{% endif %}
+    </h1>
+</div>
+
+<div class="form-container">
+    <div class="alert" style="background:#eaf4fd; border:1px solid #b3d9f5; color:#1c5680;">
+        One stage = one step of the farmer → customer journey. Set the display order so they
+        read in sequence (1, 2, 3 …).
+    </div>
+
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="title">Stage Title *</label>
+            <input type="text" id="title" name="title" value="{{ data.title }}"
+                   placeholder="e.g. Wooden Chekku Pressing" required>
+            {% if errors.title %}<small style="color:#c0392b;">{{ errors.title }}</small>{% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="subtitle">Subtitle</label>
+            <input type="text" id="subtitle" name="subtitle" value="{{ data.subtitle }}"
+                   placeholder="Short line under the title">
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" rows="4"
+                      placeholder="Explain what happens at this step">{{ data.description }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="icon">Icon (emoji)</label>
+            <input type="text" id="icon" name="icon" value="{{ data.icon }}" maxlength="8" placeholder="🌾">
+        </div>
+
+        <div class="form-group">
+            <label for="duration">Duration chip</label>
+            <input type="text" id="duration" name="duration" value="{{ data.duration }}"
+                   placeholder='e.g. "Day 1-3" or "24 hours"'>
+        </div>
+
+        <div class="form-group">
+            <label for="category">Applies to</label>
+            <select id="category" name="category">
+                <option value="">— All products (global stage) —</option>
+                {% for category in categories %}
+                    <option value="{{ category.pk }}" {% if data.category == category.pk|stringformat:"s" %}selected{% endif %}>
+                        {{ category.icon }} {{ category.name }}
+                    </option>
+                {% endfor %}
+            </select>
+            <small style="color:#7f8c8d;">
+                Leave as "All products" for the journey shown site-wide. Pick a category to give
+                that range its own journey.
+            </small>
+            {% if errors.category %}<small style="color:#c0392b;">{{ errors.category }}</small>{% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="image">Stage Image</label>
+            <input type="file" id="image" name="image" accept="image/*">
+            {% if stage and stage.image %}
+                <div style="margin-top: 1rem;">
+                    <strong>Current Image:</strong>
+                    <img src="{{ stage.image.url }}" alt="{{ stage.title }}" class="image-preview">
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="display_order">Display order *</label>
+            <input type="number" id="display_order" name="display_order" value="{{ data.display_order }}" min="0">
+            <small style="color:#7f8c8d;">Lower numbers come first in the journey.</small>
+        </div>
+
+        <div class="form-group">
+            <label class="product-checkbox" style="max-width: 220px;">
+                <input type="checkbox" name="is_active" {% if data.is_active %}checked{% endif %}>
+                Show on the website
+            </label>
+        </div>
+
+        <div class="form-buttons">
+            <button type="submit" class="btn">{% if stage %}Update Stage{% else %}Add Stage{% endif %}</button>
+            <a href="{% url 'dashboard:stages_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Delete Subcategory - Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">🗑️ Delete Subcategory</h1>
+</div>
+
+<div class="form-container">
+    <p style="margin-bottom: 1rem;">
+        Delete <strong>{{ subcategory.name }}</strong>
+        from {{ subcategory.category.name }}?
+    </p>
+
+    {% if product_total %}
+        <div class="alert" style="background:#fff3cd; color:#856404; border:1px solid #ffeeba;">
+            {{ product_total }} product{{ product_total|pluralize }} sit under this subcategory.
+            They will <strong>not</strong> be deleted — they stay in
+            <strong>{{ subcategory.category.name }}</strong> and simply lose the subcategory tag.
+        </div>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-buttons">
+            <button type="submit" class="btn btn-danger">Yes, delete it</button>
+            <a href="{% url 'dashboard:subcategories_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Stock &amp; Pack Sizes - Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">📦 Stock &amp; Pack Sizes</h1>
+    <div class="action-buttons">
+        {% if low_only %}
+            <a href="{% url 'dashboard:stock_list' %}" class="btn btn-secondary">Show all</a>
+        {% else %}
+            <a href="{% url 'dashboard:stock_list' %}?low=1" class="btn btn-secondary">Low stock only</a>
+        {% endif %}
+        <a href="{% url 'dashboard:product_add' %}" class="btn">+ Add Product</a>
+    </div>
+</div>
+
+{% if variants %}
+    <form method="post">
+        {% csrf_token %}
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Category</th>
+                        <th>Pack</th>
+                        <th>SKU</th>
+                        <th>Price</th>
+                        <th>Stock</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for variant in variants %}
+                        <tr>
+                            <td data-label="Product">
+                                <a href="{% url 'dashboard:product_edit' variant.product.pk %}">
+                                    <strong>{{ variant.product.name }}</strong>
+                                </a>
+                            </td>
+                            <td data-label="Category">
+                                {% if variant.product.category %}
+                                    {{ variant.product.category.icon }} {{ variant.product.category.name }}
+                                {% else %}—{% endif %}
+                            </td>
+                            <td data-label="Pack">{{ variant.label }}</td>
+                            <td data-label="SKU">
+                                <span style="font-family: Consolas, monospace; font-size: 0.85rem;">{{ variant.sku }}</span>
+                            </td>
+                            <td data-label="Price">₹{{ variant.price }}</td>
+                            <td data-label="Stock">
+                                <input type="number" name="stock_{{ variant.pk }}" value="{{ variant.stock }}"
+                                       min="0" style="max-width: 110px;"
+                                       aria-label="Stock for {{ variant.product.name }} {{ variant.label }}">
+                            </td>
+                            <td data-label="Status">
+                                {% if not variant.is_active %}
+                                    <span style="background:#ecf0f1; color:#7f8c8d; padding:0.25rem 0.75rem; border-radius:4px;">Inactive</span>
+                                {% elif variant.stock == 0 %}
+                                    <span style="background:#f8d7da; color:#721c24; padding:0.25rem 0.75rem; border-radius:4px;">Out of stock</span>
+                                {% elif variant.stock <= 5 %}
+                                    <span style="background:#fff3cd; color:#856404; padding:0.25rem 0.75rem; border-radius:4px;">Low</span>
+                                {% else %}
+                                    <span style="background:#d4edda; color:#155724; padding:0.25rem 0.75rem; border-radius:4px;">In stock</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="form-buttons">
+            <button type="submit" class="btn">Save stock changes</button>
+        </div>
+    </form>
+{% else %}
+    <div class="empty-state">
+        <p style="font-size: 1.2rem; margin-bottom: 0.5rem;">
+            {% if low_only %}✅ Nothing is running low.{% else %}📦 No pack sizes yet{% endif %}
+        </p>
+        <p style="margin-bottom: 1.5rem;">
+            Pack sizes are added inside a product — 250 ml, 1 L, 5 L for oils, 250 g / 1 kg for nuts.
+        </p>
+        <a href="{% url 'dashboard:product_add' %}" class="btn">Add a Product</a>
+    </div>
+{% endif %}
+{% endblock %}

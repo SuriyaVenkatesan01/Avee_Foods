@@ -1,0 +1,165 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Dashboard - Avee Foods{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">📊 Dashboard</h1>
+    <a href="{% url 'dashboard:orders_list' %}?status=open" class="btn">View open orders</a>
+</div>
+
+<!-- ============ SALES ============ -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">{{ orders_count }}</div>
+        <div class="stat-label">Total Orders</div>
+        <a href="{% url 'dashboard:orders_list' %}" class="btn btn-small" style="margin-top: 1rem;">View</a>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-number">{{ open_orders }}</div>
+        <div class="stat-label">To Fulfil</div>
+        <a href="{% url 'dashboard:orders_list' %}?status=open" class="btn btn-small" style="margin-top: 1rem;">View</a>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-number" style="color: #f39c12;">{{ awaiting_payment }}</div>
+        <div class="stat-label">Payments to Verify</div>
+        <a href="{% url 'dashboard:orders_list' %}?payment=awaiting_verification" class="btn btn-small" style="margin-top: 1rem;">Verify</a>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-number" style="color: var(--green);">₹{{ revenue|floatformat:0 }}</div>
+        <div class="stat-label">Paid Revenue</div>
+    </div>
+</div>
+
+<!-- ============ CATALOG ============ -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">{{ categories_count }}</div>
+        <div class="stat-label">Categories</div>
+        <a href="{% url 'dashboard:categories_list' %}" class="btn btn-small" style="margin-top: 1rem;">Manage</a>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-number">{{ products_count }}</div>
+        <div class="stat-label">Products</div>
+        <a href="{% url 'dashboard:products_list' %}" class="btn btn-small" style="margin-top: 1rem;">Manage</a>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-number">{{ variants_count }}</div>
+        <div class="stat-label">Pack Sizes</div>
+        <a href="{% url 'dashboard:stock_list' %}" class="btn btn-small" style="margin-top: 1rem;">Stock</a>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-number">{{ stages_count }}</div>
+        <div class="stat-label">Process Stages</div>
+        <a href="{% url 'dashboard:stages_list' %}" class="btn btn-small" style="margin-top: 1rem;">Manage</a>
+    </div>
+</div>
+
+<!-- ============ THINGS THAT NEED ATTENTION ============ -->
+{% if products_without_variants or low_stock %}
+    <div class="panel" style="margin-bottom: 2rem;">
+        <h2 style="margin-bottom: 1rem; color: var(--dark);">⚠️ Needs your attention</h2>
+
+        {% if products_without_variants %}
+            <div class="alert alert-error">
+                <strong>{{ products_without_variants }} product(s) have no pack size.</strong>
+                Customers cannot buy them until you add at least one (250 ml, 1 kg, …).
+                <a href="{% url 'dashboard:products_list' %}">Fix now →</a>
+            </div>
+        {% endif %}
+
+        {% if low_stock %}
+            <h3 style="margin: 1rem 0 0.5rem; font-size: 1rem;">Low stock pack sizes</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr><th>Product</th><th>Pack</th><th>Stock</th><th>Action</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for variant in low_stock %}
+                            <tr>
+                                <td data-label="Product">{{ variant.product.name }}</td>
+                                <td data-label="Pack">{{ variant.label }}</td>
+                                <td data-label="Stock">
+                                    <span style="background: {% if variant.stock %}#fff3cd{% else %}#f8d7da{% endif %}; padding: 0.25rem 0.75rem; border-radius: 4px;">
+                                        {{ variant.stock }}
+                                    </span>
+                                </td>
+                                <td data-label="Action">
+                                    <a href="{% url 'dashboard:stock_list' %}?low=1" class="btn btn-secondary btn-small">Update</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+{% endif %}
+
+<!-- ============ RECENT ORDERS ============ -->
+<div class="panel" style="margin-bottom: 2rem;">
+    <h2 style="margin-bottom: 1rem; color: var(--dark);">🧾 Recent orders</h2>
+
+    {% if recent_orders %}
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Order</th><th>Customer</th><th>Total</th>
+                        <th>Payment</th><th>Status</th><th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in recent_orders %}
+                        <tr>
+                            <td data-label="Order">
+                                <strong>{{ order.order_number }}</strong><br>
+                                <span style="font-size: 0.85rem; color: #7f8c8d;">{{ order.placed_at|date:"d M, g:i a" }}</span>
+                            </td>
+                            <td data-label="Customer">{{ order.full_name }}<br>
+                                <span style="font-size: 0.85rem; color: #7f8c8d;">{{ order.phone }}</span>
+                            </td>
+                            <td data-label="Total"><strong>₹{{ order.total }}</strong></td>
+                            <td data-label="Payment">
+                                {{ order.get_payment_method_display }}<br>
+                                <span style="font-size: 0.85rem; color: #7f8c8d;">{{ order.get_payment_status_display }}</span>
+                            </td>
+                            <td data-label="Status">{{ order.status_icon }} {{ order.get_status_display }}</td>
+                            <td data-label="Action">
+                                <a href="{% url 'dashboard:order_detail' order.order_number %}" class="btn btn-secondary btn-small">Open</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p style="color: #7f8c8d;">No orders yet. They will appear here as soon as customers check out.</p>
+    {% endif %}
+</div>
+
+<div class="panel">
+    <h2 style="margin-bottom: 1.5rem; color: var(--dark);">Quick Actions</h2>
+    <div class="auto-grid" style="gap: 1rem;">
+        <a href="{% url 'dashboard:categories_list' %}" class="btn btn-secondary" style="padding: 1rem; text-align: center;">
+            🗂️ Manage Categories
+        </a>
+        <a href="{% url 'dashboard:product_add' %}" class="btn" style="padding: 1rem; text-align: center;">
+            🍶 Add Product + Pack Sizes
+        </a>
+        <a href="{% url 'dashboard:stage_add' %}" class="btn btn-success" style="padding: 1rem; text-align: center;">
+            🌾 Add Process Stage
+        </a>
+        <a href="{% url 'dashboard:combo_add' %}" class="btn btn-secondary" style="padding: 1rem; text-align: center;">
+            🎁 Create Combo
+        </a>
+    </div>
+</div>
+{% endblock %}

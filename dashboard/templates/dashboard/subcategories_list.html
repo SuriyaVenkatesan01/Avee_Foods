@@ -1,0 +1,118 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Subcategories - Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">🧴 Subcategories</h1>
+    <a href="{% url 'dashboard:subcategory_add' %}" class="btn">+ Add Subcategory</a>
+</div>
+
+<div class="panel" style="margin-bottom: 1.5rem;">
+    <p style="color: #7f8c8d;">
+        The middle level of the catalog:
+        <strong>Category</strong> (Oils) → <strong>Subcategory</strong> (Groundnut Oil,
+        Coconut Oil, Sesame Oil) → <strong>Product</strong> → pack sizes (250 ml, 1 L, 5 L).
+        Whatever you add here appears in the website menu as a dropdown under its category.
+    </p>
+</div>
+
+{% if categories %}
+    <div class="panel" style="margin-bottom: 1.5rem;">
+        <form method="get" style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center;">
+            <select name="category" style="flex: 1 1 240px;" aria-label="Filter by category">
+                <option value="">All categories</option>
+                {% for category in categories %}
+                    <option value="{{ category.slug }}" {% if selected_category == category.slug %}selected{% endif %}>
+                        {{ category.icon }} {{ category.name }}
+                    </option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-small">Filter</button>
+            {% if selected_category %}
+                <a href="{% url 'dashboard:subcategories_list' %}" class="btn btn-secondary btn-small">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+{% endif %}
+
+{% if subcategories %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Category</th>
+                    <th>Subcategory</th>
+                    <th>Products</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sub in subcategories %}
+                    <tr>
+                        <td class="image-cell" data-label="Image">
+                            {% if sub.image %}
+                                <img src="{{ sub.image.url }}" alt="{{ sub.name }}">
+                            {% else %}
+                                <span style="color: #95a5a6;">No Image</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Category">
+                            <span style="background: #d1ecf1; padding: 0.25rem 0.75rem; border-radius: 4px;">
+                                {{ sub.category.icon }} {{ sub.category.name }}
+                            </span>
+                        </td>
+                        <td data-label="Subcategory">
+                            <strong>{{ sub.name }}</strong><br>
+                            <span style="font-size: 0.85rem; color: #7f8c8d;">
+                                /{{ sub.category.slug }}/{{ sub.slug }}
+                            </span>
+                        </td>
+                        <td data-label="Products">
+                            {% if sub.product_total %}
+                                <a href="{% url 'dashboard:products_list' %}?subcategory={{ sub.pk }}">
+                                    {{ sub.product_total }}
+                                </a>
+                            {% else %}
+                                <span style="color: #95a5a6;">0</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Status">
+                            {% if sub.is_active %}
+                                <span style="background: #d4edda; color: #155724; padding: 0.25rem 0.75rem; border-radius: 4px;">Active</span>
+                            {% else %}
+                                <span style="background: #f8d7da; color: #721c24; padding: 0.25rem 0.75rem; border-radius: 4px;">Hidden</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Actions">
+                            <div class="action-buttons">
+                                <a href="{% url 'dashboard:subcategory_edit' sub.pk %}" class="btn btn-secondary btn-small">Edit</a>
+                                <a href="{% url 'dashboard:subcategory_delete' sub.pk %}" class="btn btn-danger btn-small">Delete</a>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="empty-state">
+        <p style="font-size: 1.2rem; margin-bottom: 0.5rem;">🧴 No subcategories yet</p>
+        <p style="margin-bottom: 1.5rem;">
+            {% if categories %}
+                Add <strong>Groundnut Oil</strong>, <strong>Coconut Oil</strong>,
+                <strong>Sesame Oil</strong> under your Oil category.
+            {% else %}
+                Add a category first — a subcategory has to belong to one.
+            {% endif %}
+        </p>
+        {% if categories %}
+            <a href="{% url 'dashboard:subcategory_add' %}" class="btn">Add Your First Subcategory</a>
+        {% else %}
+            <a href="{% url 'dashboard:category_add' %}" class="btn">Add a Category</a>
+        {% endif %}
+    </div>
+{% endif %}
+{% endblock %}

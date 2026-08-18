@@ -1,0 +1,194 @@
+{% extends 'website/base.html' %}
+{% load avee_extras %}
+
+{% block title %}Track order {{ order.order_number }} - Avee Foods{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="track-header">
+        <div>
+            <h1 class="page-title" style="margin-bottom:0.25rem;">Order {{ order.order_number }}</h1>
+            <p style="color:var(--muted);">Placed on {{ order.placed_at|date:"d M Y, g:i a" }}</p>
+        </div>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <span class="badge {% if order.is_cancelled %}badge-red{% elif order.status == 'delivered' %}badge-green{% else %}badge-blue{% endif %}">
+                {{ order.status_icon }} {{ order.get_status_display }}
+            </span>
+            <span class="badge {% if order.payment_status == 'paid' %}badge-green{% elif order.payment_status == 'awaiting_verification' %}badge-amber{% elif order.payment_status == 'failed' %}badge-red{% else %}badge-grey{% endif %}">
+                {{ order.get_payment_method_display }} · {{ order.get_payment_status_display }}
+            </span>
+        </div>
+    </div>
+
+    {% if order.payment_method == 'upi' and order.payment_status == 'pending' %}
+        <div class="alert alert-warning" style="margin-bottom:1.5rem;">
+            Payment for this order is still pending.
+            <a href="{% url 'website:payment' order.order_number %}"><strong>Pay ₹{{ order.total|inr }} now →</strong></a>
+        </div>
+    {% endif %}
+
+    <div class="shop-grid">
+        <!-- ============ TRACKING ============ -->
+        <div class="detail-section">
+            <h2 class="section-title" style="font-size:1.2rem;">Delivery status</h2>
+
+            {% if order.is_cancelled %}
+                <div class="alert alert-error">
+                    ❌ This order was cancelled.
+                    {% if order.cancelled_reason %}<br>Reason: {{ order.cancelled_reason }}{% endif %}
+                </div>
+            {% else %}
+                <div class="progress-track">
+                    <div class="progress-fill" style="width: {{ order.progress_percent }}%;"></div>
+                </div>
+
+                <ul class="timeline">
+                    {% for step in order.timeline %}
+                        <li class="{% if step.done %}done{% endif %} {% if step.current %}current{% endif %}">
+                            <span class="dot">{{ step.icon }}</span>
+                            <div class="step-label">{{ step.label }}</div>
+                            <div class="step-meta">
+                                {% if step.at %}
+                                    {{ step.at|date:"d M Y, g:i a" }}
+                                {% elif step.current %}
+                                    In progress
+                                {% else %}
+                                    Pending
+                                {% endif %}
+                                {% if step.note %} · {{ step.note }}{% endif %}
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            {% if order.courier_name or order.tracking_number %}
+                <div class="info-panel" style="margin-top:1.5rem;">
+                    <h3 style="font-size:1rem; margin-bottom:0.5rem;">🚚 Shipment details</h3>
+                    <div class="kv-grid">
+                        {% if order.courier_name %}
+                            <div class="kv-block"><h4>Courier</h4><p>{{ order.courier_name }}</p></div>
+                        {% endif %}
+                        {% if order.tracking_number %}
+                            <div class="kv-block">
+                                <h4>Tracking number</h4>
+                                <p>{{ order.tracking_number }}
+                                    {% if order.tracking_url %}
+                                        <br><a href="{{ order.tracking_url }}" target="_blank" rel="noopener">Track with courier →</a>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        {% endif %}
+                        {% if order.expected_delivery %}
+                            <div class="kv-block">
+                                <h4>Expected delivery</h4><p>{{ order.expected_delivery|date:"d M Y" }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- ============ ITEMS ============ -->
+            <h2 class="section-title" style="font-size:1.2rem; margin-top:2rem;">Items in this order</h2>
+            <table class="order-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th class="num">Price</th>
+                        <th class="num">Qty</th>
+                        <th class="num">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order.items.all %}
+                        <tr>
+                            <td>
+                                <strong>{{ item.product_name }}</strong><br>
+                                <span style="font-size:0.85rem; color:var(--muted);">
+                                    {{ item.variant_label }}{% if item.sku %} · {{ item.sku }}{% endif %}
+                                </span>
+                            </td>
+                            <td class="num">₹{{ item.unit_price|inr }}</td>
+                            <td class="num">{{ item.quantity }}</td>
+                            <td class="num">₹{{ item.line_total|inr }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {% if order.can_cancel %}
+                <form method="post" action="{% url 'website:cancel_order' order.order_number %}" style="margin-top:1.5rem;"
+                      onsubmit="return confirm('Cancel order {{ order.order_number }}?');">
+                    {% csrf_token %}
+                    <div class="form-field" style="max-width:420px;">
+                        <label for="cancel-reason">Changed your mind?</label>
+                        <input type="text" id="cancel-reason" name="reason" class="field-input"
+                               placeholder="Reason (optional)">
+                    </div>
+                    <button type="submit" class="btn btn-outline btn-small" style="margin-top:0.75rem; color:var(--accent);">
+                        Cancel this order
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+
+        <!-- ============ CUSTOMER + PAYMENT ============ -->
+        <aside class="summary-card">
+            <h2 class="section-title" style="font-size:1.2rem;">Delivery address</h2>
+            <p style="font-size:0.95rem; line-height:1.7;">
+                <strong>{{ order.full_name }}</strong><br>
+                {{ order.address_line1 }}<br>
+                {% if order.address_line2 %}{{ order.address_line2 }}<br>{% endif %}
+                {% if order.landmark %}Near {{ order.landmark }}<br>{% endif %}
+                {{ order.city }}{% if order.district %}, {{ order.district }}{% endif %}<br>
+                {{ order.state }} - {{ order.pincode }}<br>
+                📞 {{ order.phone }}{% if order.alt_phone %} / {{ order.alt_phone }}{% endif %}
+                {% if order.email %}<br>✉ {{ order.email }}{% endif %}
+            </p>
+
+            {% if order.delivery_notes %}
+                <p style="margin-top:0.75rem; font-size:0.88rem; color:var(--muted);">
+                    📝 {{ order.delivery_notes }}
+                </p>
+            {% endif %}
+
+            <h2 class="section-title" style="font-size:1.2rem; margin-top:1.5rem;">Payment</h2>
+            <div class="summary-row"><span>Subtotal</span><span>₹{{ order.subtotal|inr }}</span></div>
+            <div class="summary-row">
+                <span>Delivery</span>
+                <span>{% if order.shipping_fee %}₹{{ order.shipping_fee|inr }}{% else %}FREE{% endif %}</span>
+            </div>
+            {% if order.discount %}
+                <div class="summary-row" style="color:var(--green);">
+                    <span>Discount</span><span>− ₹{{ order.discount|inr }}</span>
+                </div>
+            {% endif %}
+            <div class="summary-row total"><span>Total</span><span>₹{{ order.total|inr }}</span></div>
+
+            <div class="summary-row" style="border-top:1px solid var(--light); margin-top:0.75rem; padding-top:0.75rem;">
+                <span>Method</span><span>{{ order.get_payment_method_display }}</span>
+            </div>
+            <div class="summary-row">
+                <span>Status</span><span>{{ order.get_payment_status_display }}</span>
+            </div>
+            {% if order.payment_reference %}
+                <div class="summary-row">
+                    <span>Reference</span><span style="word-break:break-all;">{{ order.payment_reference }}</span>
+                </div>
+            {% endif %}
+            {% if order.paid_at %}
+                <div class="summary-row"><span>Paid on</span><span>{{ order.paid_at|date:"d M Y" }}</span></div>
+            {% endif %}
+
+            <p class="summary-note">
+                Need help? Call <a href="tel:{{ store.support_phone }}">{{ store.support_phone }}</a>
+                or WhatsApp us with your order number.
+            </p>
+        </aside>
+    </div>
+
+    <div style="margin-top:2rem;">
+        {% include 'website/partials/_journey.html' with stages=process_stages compact=1 journey_title="Where your order came from" %}
+    </div>
+</div>
+{% endblock %}

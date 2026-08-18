@@ -1,0 +1,69 @@
+{% extends 'website/base.html' %}
+
+{% block title %}{{ category.name }} - Avee Foods{% endblock %}
+{% block meta_description %}{{ category.tagline|default:category.description|truncatewords:25 }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="page-title">{{ category.label }}</h1>
+
+    {% if category.image or category.tagline or category.description %}
+        <div class="detail-section" style="margin-bottom:2rem;">
+            {% if category.image %}
+                <img src="{{ category.image.url }}" alt="{{ category.name }}"
+                     style="width:100%; height:clamp(180px, 30vw, 300px); object-fit:cover;
+                            border-radius:8px; margin-bottom:1rem;">
+            {% endif %}
+            {% if category.tagline %}
+                <p style="font-size:1.1rem; color:var(--dark); margin-bottom:0.5rem;">{{ category.tagline }}</p>
+            {% endif %}
+            {% if category.description %}
+                <p style="color:#5f6b73;">{{ category.description|linebreaksbr }}</p>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {% if subcategories %}
+        <h2 class="section-title">Browse {{ category.name }}</h2>
+        <div class="products-grid">
+            {% for sub in subcategories %}
+                <a href="{{ sub.get_absolute_url }}" class="product-card" style="text-decoration:none; color:inherit;">
+                    <div class="product-image">
+                        {% if sub.image %}
+                            <img src="{{ sub.image.url }}" alt="{{ sub.name }}" loading="lazy">
+                        {% else %}
+                            <span style="font-size:2.5rem;">{{ category.icon|default:"🧺" }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="product-info">
+                        <h3 style="color:var(--dark); margin-bottom:0.25rem;">{{ sub.name }}</h3>
+                        <p style="font-size:0.85rem; color:var(--accent); margin-top:auto; padding-top:0.75rem; font-weight:600;">
+                            {{ sub.product_count }} product{{ sub.product_count|pluralize }} →
+                        </p>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if products %}
+        <h2 class="section-title">
+            {% if subcategories %}Everything in {{ category.name }}{% else %}Products{% endif %}
+        </h2>
+        <div class="products-grid">
+            {% for product in products %}
+                {% include 'website/partials/_product_card.html' with product=product %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state" style="margin-bottom:3rem;">
+            <p style="font-size:1.1rem;">📭 Nothing listed in {{ category.name }} yet.</p>
+            <a href="{% url 'website:food_products' %}" class="btn btn-outline btn-small" style="margin-top:1rem;">
+                Browse all products
+            </a>
+        </div>
+    {% endif %}
+
+    {% include 'website/partials/_journey.html' with stages=process_stages journey_title="How our "|add:category.name|add:" reach you" %}
+</div>
+{% endblock %}

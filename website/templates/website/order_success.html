@@ -1,0 +1,88 @@
+{% extends 'website/base.html' %}
+{% load avee_extras %}
+
+{% block title %}Order {{ order.order_number }} placed - Avee Foods{% endblock %}
+
+{% block content %}
+<div class="container container-narrow">
+    <div class="detail-section" style="text-align:center;">
+        <div style="font-size:3.5rem; line-height:1;">🎉</div>
+        <h1 class="page-title" style="margin:0.75rem 0 0.5rem;">Thank you, {{ order.full_name|truncatewords:1 }}!</h1>
+        <p style="color:#5f6b73;">Your order has been placed and we've started getting it ready.</p>
+
+        <div class="copy-field" style="justify-content:center; margin:1.5rem auto; max-width:340px;">
+            <span><strong>{{ order.order_number }}</strong></span>
+            <button type="button" class="btn btn-small btn-outline" data-copy="{{ order.order_number }}">Copy</button>
+        </div>
+
+        {% if order.payment_method == 'upi' %}
+            {% if order.payment_status == 'awaiting_verification' %}
+                <div class="alert alert-info">
+                    We've received your payment reference <strong>{{ order.payment_reference }}</strong>.
+                    Your order is confirmed as soon as we verify it — usually within a few hours.
+                </div>
+            {% elif order.payment_status == 'paid' %}
+                <div class="alert alert-success">Payment received. Your order is confirmed. ✅</div>
+            {% else %}
+                <div class="alert alert-warning">
+                    Payment is still pending.
+                    <a href="{% url 'website:payment' order.order_number %}">Complete the UPI payment →</a>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="alert alert-info">
+                💵 Please keep <strong>₹{{ order.total|inr }}</strong> ready in cash for the delivery agent.
+            </div>
+        {% endif %}
+
+        <div class="btn-row" style="justify-content:center; margin-top:1.5rem;">
+            <a href="{% url 'website:order_detail' order.order_number %}" class="btn">📦 Track this order</a>
+            <a href="{% url 'website:food_products' %}" class="btn btn-outline">Continue shopping</a>
+        </div>
+    </div>
+
+    <div class="detail-section" style="margin-top:1.5rem;">
+        <h2 class="section-title" style="font-size:1.15rem;">What happens next</h2>
+        <ol style="padding-left:1.2rem; display:grid; gap:0.5rem; color:#5f6b73;">
+            <li>We confirm your order and pack it fresh from the current batch.</li>
+            <li>You get the courier name and tracking number on
+                <strong>{{ order.phone }}</strong>.</li>
+            <li>Delivery to {{ order.city }} {{ order.pincode }} usually takes
+                {{ store.delivery_days }}-7 days.</li>
+        </ol>
+
+        <h2 class="section-title" style="font-size:1.15rem; margin-top:1.5rem;">Order summary</h2>
+        <table class="order-table">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th class="num">Qty</th>
+                    <th class="num">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.items.all %}
+                    <tr>
+                        <td>{{ item.product_name }}<br>
+                            <span style="font-size:0.85rem; color:var(--muted);">{{ item.variant_label }}</span>
+                        </td>
+                        <td class="num">{{ item.quantity }}</td>
+                        <td class="num">₹{{ item.line_total|inr }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="summary-row" style="margin-top:0.75rem;">
+            <span>Subtotal</span><span>₹{{ order.subtotal|inr }}</span>
+        </div>
+        <div class="summary-row">
+            <span>Delivery</span>
+            <span>{% if order.shipping_fee %}₹{{ order.shipping_fee|inr }}{% else %}FREE{% endif %}</span>
+        </div>
+        <div class="summary-row total">
+            <span>Total</span><span>₹{{ order.total|inr }}</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

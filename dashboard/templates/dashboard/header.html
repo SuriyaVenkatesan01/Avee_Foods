@@ -1,0 +1,42 @@
+{% load static %}
+<header>
+    <div class="header-content">
+        <div class="header-left">
+            <button class="sidebar-toggle" id="sidebar-toggle" type="button"
+                    aria-label="Toggle menu" aria-expanded="false" aria-controls="sidebar">
+                <span></span><span></span><span></span>
+            </button>
+            <a class="logo-section" href="{% url 'dashboard:home' %}">
+                <img src="{% static 'img/logo-192.png' %}" alt="Avee Foods logo" width="192" height="192">
+                <span class="logo-text"><span class="brand">Avee</span> Foods Dashboard</span>
+            </a>
+        </div>
+
+        <div class="header-actions">
+            <div class="user-menu">
+                <div class="user-info">
+                    <div class="user-name">👤 {{ user.first_name|default:user.username }}</div>
+                    <div class="user-role">Administrator</div>
+                </div>
+                <div class="user-avatar" title="Go to profile">
+                    {{ user.first_name|default:user.username|first|upper }}
+                </div>
+            </div>
+
+            <div class="header-buttons">
+                <a href="{% url 'dashboard:profile' %}" class="btn-header btn-profile" title="View Profile">
+                    👤 <span class="btn-label">Profile</span>
+                </a>
+                <a href="{% url 'website:home' %}" class="btn-header btn-profile" title="Visit Website" style="background-color: var(--green);">
+                    🌐 <span class="btn-label">Website</span>
+                </a>
+                <form method="post" action="{% url 'dashboard:logout' %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-header btn-logout" title="Logout">
+                        🚪 <span class="btn-label">Logout</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</header>

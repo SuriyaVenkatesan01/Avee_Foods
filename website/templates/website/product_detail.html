@@ -1,0 +1,264 @@
+{% extends 'website/base.html' %}
+{% load avee_extras %}
+
+{% block title %}{{ product.name }} - Avee Foods{% endblock %}
+{% block meta_description %}{{ product.short_description|default:product.description|truncatewords:25 }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <p style="font-size:0.88rem; color:var(--muted); margin-bottom:1rem;">
+        <a href="{% url 'website:home' %}">Home</a> ›
+        <a href="{% url 'website:food_products' %}">Products</a>
+        {% if product.category %}
+            › <a href="{{ product.category.get_absolute_url }}">{{ product.category.name }}</a>
+        {% endif %}
+        {% if product.subcategory %}
+            › <a href="{{ product.subcategory.get_absolute_url }}">{{ product.subcategory.name }}</a>
+        {% endif %}
+        › {{ product.name }}
+    </p>
+
+    <div class="detail-section">
+        <div class="detail-grid">
+            <!-- ============ IMAGES ============ -->
+            <div>
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="detail-image" id="main-image">
+                {% else %}
+                    <div class="product-image detail-image-placeholder">No Image</div>
+                {% endif %}
+
+                {% if product.images.all %}
+                    <div class="thumb-row">
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}" data-full="{{ product.image.url }}">
+                        {% endif %}
+                        {% for extra in product.images.all %}
+                            <img src="{{ extra.image.url }}" alt="{{ extra.alt_text|default:product.name }}" data-full="{{ extra.image.url }}">
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- ============ BUY BOX ============ -->
+            <div>
+                {% if product.category %}
+                    <div class="card-category">
+                        <a href="{{ product.category.get_absolute_url }}" style="color:inherit;">{{ product.category.label }}</a>
+                    </div>
+                {% endif %}
+
+                <h1 class="page-title" style="margin:0.25rem 0 0.5rem;">{{ product.name }}</h1>
+
+                {% if product.short_description %}
+                    <p style="color:#5f6b73; margin-bottom:1rem;">{{ product.short_description }}</p>
+                {% endif %}
+
+                {% if product.certifications %}
+                    <div class="tag-row" style="margin-bottom:1.25rem;">
+                        {% for cert in product.certifications %}
+                            <span class="tag">✔ {{ cert }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {% if variants %}
+                    <form method="post" action="{% url 'website:cart_add' %}" id="buy-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+
+                        <h3 class="section-title" style="font-size:1.05rem; margin-bottom:0.6rem;">
+                            Choose your pack size
+                        </h3>
+
+                        <div class="variant-list">
+                            {% for variant in variants %}
+                                <label class="variant-option {% if not variant.in_stock %}disabled{% endif %}">
+                                    <input type="radio" name="variant" value="{{ variant.pk }}"
+                                           {% if variant.pk == selected_variant.pk %}checked{% endif %}
+                                           {% if not variant.in_stock %}disabled{% endif %} required>
+                                    <span class="variant-body">
+                                        <span class="variant-label">{{ variant.label }}</span>
+                                        <span class="variant-meta">
+                                            {% if variant.unit_rate %}₹{{ variant.unit_rate|inr }}{{ variant.unit_rate_label }}{% endif %}
+                                            {% if not variant.in_stock %}
+                                                — <strong style="color:var(--accent);">Out of stock</strong>
+                                            {% elif product.stock_managed and variant.stock <= 5 %}
+                                                — <strong style="color:var(--amber);">Only {{ variant.stock }} left</strong>
+                                            {% endif %}
+                                        </span>
+                                    </span>
+                                    <span class="variant-price">
+                                        <span class="now">₹{{ variant.price|inr }}</span>
+                                        {% if variant.discount_percent %}
+                                            <span class="was">₹{{ variant.mrp|inr }}</span>
+                                        {% endif %}
+                                    </span>
+                                </label>
+                            {% endfor %}
+                        </div>
+
+                        {% if product.in_stock %}
+                            <div class="btn-row" style="align-items:center; margin-bottom:1rem;">
+                                <span class="qty-stepper">
+                                    <button type="button" data-step="down" aria-label="Decrease quantity">−</button>
+                                    <input type="number" name="quantity" value="1" min="1" max="99" aria-label="Quantity">
+                                    <button type="button" data-step="up" aria-label="Increase quantity">+</button>
+                                </span>
+                            </div>
+
+                            <div class="btn-row">
+                                <button type="submit" class="btn" style="flex:1 1 200px;">🛒 Add to Cart</button>
+                                <button type="submit" name="buy_now" value="1" class="btn btn-success" style="flex:1 1 160px;">
+                                    ⚡ Buy Now
+                                </button>
+                            </div>
+                        {% else %}
+                            <button type="button" class="btn btn-block" disabled>Out of stock</button>
+                        {% endif %}
+                    </form>
+                {% else %}
+                    <div class="alert alert-warning">
+                        No pack sizes have been added for this product yet.
+                    </div>
+                {% endif %}
+
+                <div class="info-panel" style="margin-top:1.5rem; padding:1rem;">
+                    <div style="display:grid; gap:0.4rem; font-size:0.9rem;">
+                        <span>🚚 Free delivery above ₹{{ store.free_shipping_above|inr }} · else ₹{{ store.shipping_fee|inr }}</span>
+                        <span>💵 Cash on Delivery & UPI accepted</span>
+                        <span>📦 Dispatched within 24 hours · delivered in {{ store.delivery_days }}-7 days</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ DESCRIPTION + JSON DETAIL BLOCKS ============ -->
+        <div class="auto-grid" style="margin-top:1rem;">
+            <div>
+                <h2 class="section-title">About this product</h2>
+                <p style="line-height:1.8; color:#5f6b73;">{{ product.description|linebreaksbr }}</p>
+
+                {% if product.highlights %}
+                    <h3 class="section-title" style="font-size:1.1rem; margin-top:1.5rem;">Why you'll like it</h3>
+                    <ul class="tick-list">
+                        {% for point in product.highlights %}
+                            <li>{{ point }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+
+                {% if product.usage %}
+                    <h3 class="section-title" style="font-size:1.1rem; margin-top:1.5rem;">Best used for</h3>
+                    <div class="tag-row">
+                        {% for use in product.usage %}
+                            <span class="tag">{{ use }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {% if product.ingredients %}
+                    <h3 class="section-title" style="font-size:1.1rem; margin-top:1.5rem;">Ingredients</h3>
+                    <p style="color:#5f6b73;">{{ product.ingredients|join:", " }}</p>
+                {% endif %}
+
+                {% if product.storage %}
+                    <h3 class="section-title" style="font-size:1.1rem; margin-top:1.5rem;">Storage</h3>
+                    <p style="color:#5f6b73;">{{ product.storage }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                {% if product.specifications %}
+                    <h2 class="section-title">Specifications</h2>
+                    <table class="spec-table">
+                        <tbody>
+                            {% for key, value in product.specifications.items %}
+                                <tr>
+                                    <th scope="row">{{ key }}</th>
+                                    <td>{{ value }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+
+                {% if product.nutrition.values %}
+                    <h2 class="section-title" style="margin-top:1.5rem;">
+                        Nutrition
+                        {% if product.nutrition.basis %}
+                            <span style="font-size:0.8rem; color:var(--muted); font-weight:normal;">
+                                ({{ product.nutrition.basis }})
+                            </span>
+                        {% endif %}
+                    </h2>
+                    <table class="spec-table">
+                        <tbody>
+                            {% for key, value in product.nutrition.values.items %}
+                                <tr>
+                                    <th scope="row">{{ key }}</th>
+                                    <td>{{ value }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+
+                {% if product.sourcing %}
+                    <h2 class="section-title" style="margin-top:1.5rem;">Where it comes from</h2>
+                    <table class="spec-table">
+                        <tbody>
+                            {% for key, value in product.sourcing.items %}
+                                <tr>
+                                    <th scope="row">{{ key|title }}</th>
+                                    <td>{{ value }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if product.faq %}
+            <div style="margin-top:2rem;">
+                <h2 class="section-title">Frequently asked</h2>
+                {% for item in product.faq %}
+                    <details class="faq-item">
+                        <summary>{{ item.q }}</summary>
+                        <p>{{ item.a }}</p>
+                    </details>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <div style="margin-top:2rem;">
+        {% include 'website/partials/_journey.html' with stages=process_stages journey_title="How this reaches you" %}
+    </div>
+
+    {% if related_products %}
+        <div class="related-products">
+            <h2 class="section-title">You may also like</h2>
+            <div class="products-grid">
+                {% for item in related_products %}
+                    {% include 'website/partials/_product_card.html' with product=item %}
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    // Thumbnail click swaps the main image
+    (function () {
+        var main = document.getElementById('main-image');
+        if (!main) return;
+        document.querySelectorAll('.thumb-row img').forEach(function (thumb) {
+            thumb.addEventListener('click', function () {
+                main.src = thumb.dataset.full || thumb.src;
+            });
+        });
+    })();
+</script>
+{% endblock %}

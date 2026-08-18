@@ -1,0 +1,3204 @@
+{% load static avee_extras %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1f4d2b">
+    <title>{% block title %}Avee Foods{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}Cold pressed oils and nuts sourced straight from farmers and delivered to your home.{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}cold pressed oil, wood pressed oil, chekku oil, marachekku ennai, groundnut oil, coconut oil, sesame oil, gingelly oil, organic oil online, Tamil Nadu{% endblock %}">
+    <meta name="robots" content="{% block meta_robots %}index, follow, max-image-preview:large{% endblock %}">
+    <meta name="author" content="{{ store.name }}">
+
+    {# Canonical URL — stops ?category=/?page= duplicates competing in search #}
+    <link rel="canonical" href="{% block canonical %}{{ request.scheme }}://{{ request.get_host }}{{ request.path }}{% endblock %}">
+
+    {# Open Graph / Twitter: controls the preview card on WhatsApp, FB, X #}
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:site_name" content="{{ store.name }}">
+    <meta property="og:locale" content="en_IN">
+    <meta property="og:title" content="{% block og_title %}{{ store.name }}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Cold pressed oils and nuts sourced straight from farmers and delivered to your home.{% endblock %}">
+    <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+    <meta property="og:image" content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/logo-192.png' %}{% endblock %}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}{{ store.name }}{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Cold pressed oils and nuts, farm to home.{% endblock %}">
+
+    <link rel="icon" href="{% static 'img/favicon.ico' %}" sizes="any">
+    <link rel="icon" type="image/png" href="{% static 'img/favicon-32.png' %}" sizes="32x32">
+    <link rel="apple-touch-icon" href="{% static 'img/favicon-180.png' %}">
+    <style>
+        :root {
+            /* Palette taken from the logo: forest green, golden oil drop, cream.
+               Gold is bright, so it needs two tokens: --accent for surfaces
+               (with dark text on top) and --accent-text for gold as text on a
+               light background, which has to be darker to stay readable. */
+            --dark: #1f4d2b;          /* forest green - header, footer */
+            --darker: #163a20;        /* deeper green - top bar */
+            --accent: #e0a106;        /* golden amber - buttons, badges */
+            --accent-dark: #b8830a;   /* gold hover */
+            --accent-text: #8a6100;   /* gold as TEXT on white/cream */
+            --accent-light: #f2c14e;  /* gold as text on dark green */
+            --on-accent: #24301f;     /* text sitting ON a gold surface */
+            --danger: #c0392b;        /* errors, delete, remove */
+            --blue: #3a6b45;          /* secondary button - olive green */
+            --blue-dark: #2e5636;
+            --green: #2e7d32;
+            --green-dark: #256428;
+            --amber: #d97706;         /* warnings only */
+            --muted: #5e6b59;
+            --light: #f0ede3;         /* warm light fill */
+            --border: #d6d2c4;
+            --page-bg: #fbf8f1;       /* cream page */
+            --ink: #24301f;           /* body text */
+            /* Side gutter grows with the viewport, so the layout fills any
+               screen instead of sitting inside a fixed 1200px box */
+            --page-x: clamp(1rem, 4vw, 4rem);
+            --header-h: 64px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            -webkit-text-size-adjust: 100%;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--ink);
+            background-color: var(--page-bg);
+            overflow-x: hidden;
+            /* Sticky footer: keeps the footer at the bottom of the screen on
+               short pages (empty combos/gallery) instead of floating mid-page */
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            min-height: 100dvh;
+        }
+
+        main {
+            flex: 1 0 auto;
+        }
+
+        img {
+            max-width: 100%;
+            display: block;
+        }
+
+        a {
+            color: var(--blue-dark);
+        }
+
+        /* ============ HEADER / NAV ============ */
+        header {
+            background-color: var(--dark);
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            padding: 0.9rem var(--page-x);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: clamp(1.05rem, 3.6vw, 1.4rem);
+            font-weight: bold;
+            color: var(--accent-light);
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .logo img {
+            width: clamp(40px, 9vw, 54px);
+            height: clamp(40px, 9vw, 54px);
+            border-radius: 50%;
+            flex: 0 0 auto;
+        }
+
+        .footer-logo {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            order: 3;
+        }
+
+        /* Cart button lives outside the collapsible menu so it is always
+           one tap away, even with the mobile menu closed */
+        .cart-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.5rem 0.9rem;
+            background: var(--accent);
+            color: var(--on-accent);
+            border-radius: 999px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.95rem;
+            min-height: 44px;
+        }
+
+        .cart-link:hover {
+            background: var(--accent-dark);
+        }
+
+        /* Swap the file at static/img/icon/cart.png to change the glyph -- the
+           icon is sized here so any square PNG drops in without markup edits */
+        .cart-icon {
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+            display: block;
+            flex-shrink: 0;
+        }
+
+        .cart-count {
+            background: var(--on-accent);
+            color: var(--accent-light);
+            border-radius: 999px;
+            min-width: 22px;
+            height: 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 0 6px;
+        }
+
+        /* Drawer chrome only exists once the menu becomes an off-canvas panel.
+           On desktop the same <ul> is a plain horizontal bar, so the head,
+           search, account row, social strip and per-item icons all stay off. */
+        .drawer-head,
+        .drawer-search,
+        .drawer-account,
+        .drawer-foot,
+        .drawer-close,
+        .nav-ico,
+        .nav-backdrop {
+            display: none;
+        }
+
+        .nav-toggle {
+            display: none;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.35);
+            border-radius: 6px;
+            width: 44px;
+            height: 44px;
+            cursor: pointer;
+            padding: 0;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .nav-toggle span {
+            display: block;
+            width: 22px;
+            height: 2px;
+            background: #fff;
+            transition: transform 0.25s, opacity 0.25s;
+        }
+
+        .nav-toggle[aria-expanded="true"] span:nth-child(1) {
+            transform: translateY(7px) rotate(45deg);
+        }
+
+        .nav-toggle[aria-expanded="true"] span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .nav-toggle[aria-expanded="true"] span:nth-child(3) {
+            transform: translateY(-7px) rotate(-45deg);
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: clamp(0.9rem, 2.5vw, 1.8rem);
+            align-items: center;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            transition: color 0.3s;
+            display: block;
+        }
+
+        nav a:hover,
+        nav a:focus-visible {
+            color: var(--accent-light);
+        }
+
+        /* ============ NAV DROPDOWN (category -> subcategories) ============ */
+        .has-drop {
+            position: relative;
+        }
+
+        .drop-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            background: none;
+            border: none;
+            color: #fff;
+            font: inherit;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .drop-toggle:hover,
+        .drop-toggle[aria-expanded="true"] {
+            color: var(--accent-light);
+        }
+
+        .drop-toggle .caret {
+            font-size: 0.65em;
+            transition: transform 0.2s;
+        }
+
+        .drop-toggle[aria-expanded="true"] .caret {
+            transform: rotate(180deg);
+        }
+
+        .drop-menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + 0.75rem);
+            left: 50%;
+            transform: translateX(-50%);
+            min-width: 230px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 8px 28px rgba(0,0,0,0.25);
+            padding: 0.4rem;
+            z-index: 120;
+            list-style: none;
+        }
+
+        /* Bridges the gap between the link and the panel so the menu does not
+           close while the pointer travels down to it */
+        .drop-menu::before {
+            content: '';
+            position: absolute;
+            top: -0.75rem;
+            left: 0;
+            right: 0;
+            height: 0.75rem;
+        }
+
+        /* `.open` is the single source of truth, set by the click handler.
+           Hover is a desktop-only convenience that may only ever SHOW the
+           panel -- a rule that hides it would out-specify `.open` and the
+           panel could never be opened by tapping. */
+        .drop-menu.open {
+            display: block;
+        }
+
+        @media (min-width: 769px) and (hover: hover) {
+            .has-drop:hover .drop-menu,
+            .has-drop:focus-within .drop-menu {
+                display: block;
+            }
+        }
+
+        .drop-menu li {
+            display: block;
+        }
+
+        .drop-menu a {
+            display: block;
+            padding: 0.6rem 0.85rem;
+            color: var(--dark);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            white-space: nowrap;
+        }
+
+        .drop-menu a:hover,
+        .drop-menu a:focus-visible {
+            background: var(--light);
+            color: var(--accent-text);
+        }
+
+        .drop-menu .drop-all {
+            font-weight: 700;
+            border-bottom: 1px solid var(--light);
+            border-radius: 6px 6px 0 0;
+            margin-bottom: 0.25rem;
+        }
+
+        /* ---- Products panel: a column per category, subcategories beneath ---- */
+        .drop-menu.mega {
+            padding: 1rem;
+            min-width: min(760px, 92vw);
+            max-height: min(70vh, 560px);
+            overflow-y: auto;
+        }
+
+        .mega-all {
+            display: block;
+            font-weight: 700;
+            color: var(--accent-text) !important;
+            padding: 0.6rem 0.75rem;
+            border-radius: 6px;
+            border-bottom: 1px solid var(--light);
+            margin-bottom: 0.75rem;
+        }
+
+        .mega-cols {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
+            gap: 0.5rem 1.25rem;
+        }
+
+        .mega-col ul {
+            list-style: none;
+        }
+
+        .mega-head {
+            display: block;
+            font-weight: 700;
+            color: var(--dark);
+            padding: 0.4rem 0.75rem;
+            border-radius: 6px;
+            border-bottom: 2px solid var(--accent);
+            margin-bottom: 0.35rem;
+        }
+
+        .mega-col a {
+            padding: 0.45rem 0.75rem;
+            font-size: 0.92rem;
+        }
+
+        .mega-empty {
+            display: block;
+            padding: 0.45rem 0.75rem;
+            font-size: 0.85rem;
+            color: var(--muted);
+            font-style: italic;
+        }
+
+        /* Top strip: trust signals + order tracking shortcut */
+        .topbar {
+            background: var(--darker);
+            color: #cfd8dc;
+            font-size: 0.85rem;
+        }
+
+        /* Scrolling ticker. The track holds TWO identical copies of the list
+           and slides exactly -50%, so the moment copy A leaves the screen copy
+           B is sitting in its place -- the loop has no visible seam. */
+        .ticker {
+            overflow: hidden;
+            padding: 0.45rem 0;
+        }
+
+        .ticker-track {
+            display: flex;
+            width: max-content;
+            animation: ticker-scroll 42s linear infinite;
+        }
+
+        /* Give the reader a way to stop it and click a link */
+        .ticker:hover .ticker-track,
+        .ticker-track:focus-within {
+            animation-play-state: paused;
+        }
+
+        .ticker-group {
+            display: flex;
+            align-items: center;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .ticker-group li {
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            padding-inline: 1.6rem;
+        }
+
+        /* Sized a shade larger than the 0.85rem strip text so the flat icons
+           still read at a glance without dominating the line */
+        .ticker-ico {
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+            margin-right: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .ticker-group li::after {
+            content: "•";
+            margin-left: 1.6rem;
+            color: var(--accent-light);
+            opacity: 0.55;
+        }
+
+        @keyframes ticker-scroll {
+            from { transform: translateX(0); }
+            to   { transform: translateX(-50%); }
+        }
+
+        /* The global reduced-motion rule kills the animation, which would leave
+           the strip frozen mid-slide. Reset it to a plain scrollable row. */
+        @media (prefers-reduced-motion: reduce) {
+            .ticker {
+                overflow-x: auto;
+            }
+
+            .ticker-track {
+                transform: none !important;
+            }
+
+            .ticker-group[aria-hidden="true"] {
+                display: none;
+            }
+        }
+
+        .topbar a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .topbar a:hover {
+            color: var(--accent-light);
+        }
+
+        /* ============ LAYOUT ============ */
+        /* Full-bleed: the page uses the whole viewport at every width, with
+           only the --page-x gutter holding content off the edges */
+        .container {
+            width: 100%;
+            padding: clamp(1.5rem, 5vw, 2rem) var(--page-x);
+        }
+
+        /* Forms and long reading text still get a comfortable measure --
+           a checkout form stretched across a 2500px monitor is unusable */
+        .container-narrow {
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #1f4d2b 0%, #2f6b3a 55%, #4a7c3a 100%);
+            color: white;
+            padding: clamp(2.5rem, 8vw, 4rem) var(--page-x);
+            text-align: center;
+            margin-bottom: clamp(2rem, 6vw, 3rem);
+            border-radius: 8px;
+        }
+
+        /* Edge-to-edge hero that sits outside .container */
+        .hero-full {
+            border-radius: 0;
+            margin-bottom: 0;
+            padding-block: clamp(3rem, 9vw, 5.5rem);
+        }
+
+        /* ============ HOME BANNER (photo / video slideshow) ============ */
+        .banner {
+            position: relative;
+            width: 100%;
+            /* Tall enough to feel like a hero, never taller than the screen */
+            height: clamp(340px, 62vw, 780px);
+            background: var(--dark);
+            overflow: hidden;
+        }
+
+        .banner-slide {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.6s ease;
+        }
+
+        .banner-slide.is-current {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .banner-slide > img,
+        .banner-slide > video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Dark wash so overlay text stays readable on any photo */
+        .banner-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 0.75rem;
+            padding: clamp(1rem, 4vw, 3rem);
+            background: linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.55));
+            color: #fff;
+        }
+
+        .banner-overlay h2 {
+            font-size: clamp(1.4rem, 4.5vw, 3rem);
+            line-height: 1.2;
+            text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+        }
+
+        .banner-overlay p {
+            font-size: clamp(0.95rem, 2.2vw, 1.25rem);
+            max-width: 60ch;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .banner-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.45);
+            color: #fff;
+            font-size: 1.4rem;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3;
+        }
+
+        .banner-nav:hover { background: rgba(0,0,0,0.7); }
+        .banner-nav.prev { left: clamp(0.5rem, 2vw, 1.5rem); }
+        .banner-nav.next { right: clamp(0.5rem, 2vw, 1.5rem); }
+
+        .banner-dots {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: clamp(0.75rem, 2vw, 1.25rem);
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            z-index: 3;
+        }
+
+        .banner-dot {
+            width: 34px;
+            height: 5px;
+            border: none;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.45);
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .banner-dot.is-current { background: #fff; }
+
+        /* A single slide needs no controls */
+        .banner[data-count="1"] .banner-nav,
+        .banner[data-count="1"] .banner-dots {
+            display: none;
+        }
+
+        .hero h1 {
+            font-size: clamp(1.75rem, 6vw, 2.5rem);
+            margin-bottom: 1rem;
+            line-height: 1.25;
+        }
+
+        .hero p {
+            font-size: clamp(1rem, 3vw, 1.2rem);
+            margin-bottom: 2rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            background-color: var(--accent);
+            /* Gold is too light for white text (2.3:1) -- dark green reads at 6.2:1 */
+            color: var(--on-accent);
+            font-weight: 700;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-family: inherit;
+            text-align: center;
+            min-height: 44px;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-dark);
+        }
+
+        .btn:disabled {
+            background-color: var(--border);
+            cursor: not-allowed;
+        }
+
+        /* The dark green fills carry white text; only the gold .btn does not */
+        .btn-secondary {
+            background-color: var(--blue);
+            color: #fff;
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--blue-dark);
+        }
+
+        .btn-success {
+            background-color: var(--green);
+            color: #fff;
+        }
+
+        .btn-success:hover {
+            background-color: var(--green-dark);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--dark);
+            border: 1px solid var(--border);
+        }
+
+        .btn-outline:hover {
+            background: var(--light);
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        .btn-small {
+            padding: 0.45rem 0.9rem;
+            font-size: 0.9rem;
+            min-height: 38px;
+        }
+
+        /* Wrapping row of buttons — never overflows on narrow screens */
+        .btn-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        /* ============ MESSAGES ============ */
+        .messages {
+            width: 100%;
+            margin-top: 1rem;
+            padding: 0 var(--page-x);
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .alert {
+            padding: 0.9rem 1rem;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            font-size: 0.95rem;
+        }
+
+        .alert-success { background: #d4edda; color: #155724; border-color: #c3e6cb; }
+        .alert-info    { background: #d1ecf1; color: #0c5460; border-color: #bee5eb; }
+        .alert-warning { background: #fff3cd; color: #856404; border-color: #ffeeba; }
+        .alert-error,
+        .alert-danger  { background: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+
+        /* ============ CARDS / GRIDS ============ */
+        /* min() keeps a single column from ever exceeding the viewport width */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr));
+            gap: clamp(1rem, 3vw, 2rem);
+            margin-bottom: clamp(2rem, 6vw, 3rem);
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .product-image {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            background-color: var(--light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            color: var(--muted);
+        }
+
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .product-info {
+            padding: clamp(1rem, 3vw, 1.5rem);
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .product-info .btn {
+            margin-top: auto;
+            align-self: stretch;
+        }
+
+        .product-name {
+            font-size: 1.15rem;
+            font-weight: bold;
+            margin-bottom: 0.35rem;
+            overflow-wrap: anywhere;
+        }
+
+        .product-name a {
+            color: var(--dark);
+            text-decoration: none;
+        }
+
+        .product-name a:hover {
+            color: var(--accent-text);
+        }
+
+        .product-price {
+            font-size: 1.4rem;
+            color: var(--accent-text);
+            font-weight: bold;
+            margin-bottom: 0.75rem;
+        }
+
+        .product-price .mrp {
+            font-size: 0.9rem;
+            color: var(--muted);
+            text-decoration: line-through;
+            font-weight: normal;
+            margin-left: 0.4rem;
+        }
+
+        .product-price .from {
+            font-size: 0.8rem;
+            color: var(--muted);
+            font-weight: normal;
+        }
+
+        .product-description {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 0.9rem;
+            overflow-wrap: anywhere;
+        }
+
+        .card-category {
+            font-size: 0.8rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 0.3rem;
+        }
+
+        /* Pack size chips shown on cards and the detail page */
+        .pack-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            margin-bottom: 0.9rem;
+        }
+
+        .pack-chip {
+            font-size: 0.78rem;
+            padding: 0.2rem 0.55rem;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            color: var(--muted);
+            background: #fafafa;
+            white-space: nowrap;
+        }
+
+        .ribbon {
+            position: absolute;
+            top: 0.75rem;
+            left: 0;
+            background: var(--green);
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.25rem 0.7rem;
+            border-radius: 0 4px 4px 0;
+            z-index: 2;
+        }
+
+        .ribbon-out {
+            background: var(--muted);
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+            gap: clamp(1rem, 3vw, 2rem);
+            margin-bottom: clamp(2rem, 6vw, 3rem);
+        }
+
+        .gallery-item {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .gallery-image {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            background-color: var(--light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            color: var(--muted);
+        }
+
+        .gallery-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .gallery-info {
+            padding: 1rem;
+            background-color: white;
+        }
+
+        /* ============ SECTIONS ============ */
+        .page-title {
+            font-size: clamp(1.5rem, 5vw, 2.5rem);
+            margin-bottom: clamp(1.25rem, 4vw, 2rem);
+            color: var(--dark);
+            line-height: 1.25;
+            overflow-wrap: anywhere;
+        }
+
+        .section-title {
+            font-size: clamp(1.25rem, 4vw, 1.75rem);
+            margin-bottom: 1rem;
+            color: var(--dark);
+        }
+
+        /* Homepage product-category selector */
+        .our-products-section { padding-top: clamp(1.5rem, 4vw, 2.75rem); }
+        .our-products-section .section-title { text-align: center; margin-bottom: 1.25rem; }
+        .category-filter-grid {
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem;
+            margin: 0 auto clamp(1.75rem, 4vw, 2.5rem);
+        }
+        /* Flat rectangular bar: icon and label on one line, so each tile is only
+           as wide as its own label and nothing wraps to a second line */
+        .category-filter {
+            min-height: 52px; padding: 0.6rem 1.15rem;
+            border: 1px solid var(--border); border-radius: 8px; background: #fff;
+            color: var(--dark); font: inherit; font-weight: 700; line-height: 1.2;
+            white-space: nowrap;
+            cursor: pointer; display: flex; flex-direction: row; align-items: center;
+            justify-content: center; gap: 0.55rem;
+            transition: background-color 0.2s, border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+        }
+        .category-filter:hover, .category-filter:focus-visible {
+            border-color: var(--accent); transform: translateY(-2px); outline: none;
+            box-shadow: 0 3px 10px rgba(31, 77, 43, 0.14);
+        }
+        .category-filter.active { background: var(--dark); border-color: var(--dark); color: #fff; }
+        .category-filter-icon { font-size: 1.15rem; line-height: 1; display: flex; align-items: center; }
+        .category-filter-icon img { width: 24px; height: 24px; object-fit: contain; }
+        .product-filter-item[hidden] { display: none; }
+        @media (max-width: 480px) {
+            .category-filter { min-height: 44px; padding: 0.5rem 0.85rem; font-size: 0.82rem; gap: 0.4rem; }
+            .category-filter-icon { font-size: 1rem; }
+        }
+
+        .section-lead {
+            color: var(--muted);
+            margin-bottom: 1.5rem;
+            max-width: 70ch;
+        }
+
+        .detail-section {
+            background: white;
+            padding: clamp(1.25rem, 4vw, 2rem);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        /* Two-column detail layout that collapses to one column on tablet/mobile */
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: clamp(1.5rem, 4vw, 2rem);
+            margin-bottom: clamp(2rem, 6vw, 3rem);
+        }
+
+        .detail-image {
+            width: 100%;
+            height: clamp(240px, 45vw, 400px);
+            object-fit: cover;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+        }
+
+        .detail-image-placeholder {
+            height: clamp(240px, 45vw, 400px);
+            border-radius: 8px;
+        }
+
+        .thumb-row {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .thumb-row img {
+            width: 72px;
+            height: 72px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        .related-products {
+            margin-top: clamp(2rem, 6vw, 3rem);
+        }
+
+        .filter-section {
+            margin-bottom: 2rem;
+        }
+
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-bar select,
+        .filter-bar input[type="search"],
+        .filter-bar input[type="text"] {
+            padding: 0.7rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            font-family: inherit;
+            min-height: 44px;
+            background: white;
+            flex: 1 1 180px;
+            min-width: 0;
+        }
+
+        .filter-section select {
+            padding: 0.7rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 1rem;
+            font-family: inherit;
+            width: 100%;
+            max-width: 320px;
+            min-height: 44px;
+            background: white;
+        }
+
+        /* Category pills used across home / listing pages */
+        .pill-row {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+
+        .pill {
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: #fff;
+            color: var(--dark);
+            text-decoration: none;
+            font-size: 0.92rem;
+            white-space: nowrap;
+            min-height: 40px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .pill:hover {
+            border-color: var(--accent);
+            color: var(--accent-text);
+        }
+
+        .pill.active {
+            background: var(--dark);
+            border-color: var(--dark);
+            color: #fff;
+        }
+
+        /* Subcategory row: visually subordinate to the category row above it */
+        .sub-pill-row {
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background: var(--light);
+            border-radius: 10px;
+        }
+
+        .pill-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .pill-sub {
+            min-height: 34px;
+            padding: 0.35rem 0.85rem;
+            font-size: 0.88rem;
+        }
+
+        .pill-sub.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--on-accent);
+        }
+
+        /* Pages with a centred header block: title, intro line and any filter
+           rows sit in the middle like the home category selector, instead of
+           running along the left edge. The child combinator keeps this to rows
+           in the page header -- pill rows nested inside a content card, such as
+           "What We Make" on About, stay left aligned with their own heading. */
+        .page-centered .page-title { text-align: center; }
+        .page-centered .section-lead { margin-inline: auto; text-align: center; }
+        .page-centered > .pill-row,
+        .page-centered > .sub-pill-row { justify-content: center; }
+
+        /* Generic auto-fitting column grid used by About and similar pages */
+        .auto-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+            gap: clamp(1.25rem, 4vw, 2rem);
+        }
+
+        .info-panel {
+            background-color: var(--light);
+            padding: clamp(1.25rem, 4vw, 2rem);
+            border-radius: 8px;
+        }
+
+        .contact-form {
+            display: grid;
+            gap: 1rem;
+            max-width: 560px;
+        }
+
+        .contact-form input,
+        .contact-form textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        .contact-form textarea {
+            resize: vertical;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: clamp(2rem, 6vw, 3rem) 1rem;
+            color: var(--muted);
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        /* ============ FARM -> HOME JOURNEY ============ */
+        .journey {
+            background: #f4f1e2;
+            border-radius: 12px;
+            padding: clamp(1.5rem, 4vw, 2.5rem);
+        }
+
+        .journey-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
+            gap: 1rem;
+            counter-reset: stage;
+        }
+
+        .journey-step {
+            background: #fff;
+            border-radius: 10px;
+            padding: 1.1rem;
+            border: 1px solid #e3ddc6;
+            position: relative;
+        }
+
+        /* The connector line only makes sense once the steps sit in a row */
+        .journey-step::after {
+            content: '';
+            position: absolute;
+            top: 2.1rem;
+            right: -1rem;
+            width: 1rem;
+            border-top: 2px dashed #cfc9a8;
+        }
+
+        .journey-step:last-child::after {
+            display: none;
+        }
+
+        .journey-icon {
+            font-size: 1.7rem;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .journey-step h3 {
+            font-size: 1rem;
+            color: var(--dark);
+            margin-bottom: 0.2rem;
+        }
+
+        .journey-sub {
+            font-size: 0.85rem;
+            color: var(--accent-text);
+            margin-bottom: 0.4rem;
+        }
+
+        .journey-step p {
+            font-size: 0.87rem;
+            color: #5f6b73;
+        }
+
+        .journey-duration {
+            display: inline-block;
+            margin-top: 0.6rem;
+            font-size: 0.75rem;
+            background: var(--light);
+            color: var(--muted);
+            padding: 0.15rem 0.55rem;
+            border-radius: 999px;
+        }
+
+        .journey-num {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.9rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #c9c2a0;
+        }
+
+        /* ============ VARIANT PICKER / QUANTITY ============ */
+        .variant-list {
+            display: grid;
+            gap: 0.6rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .variant-option {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem 0.9rem;
+            cursor: pointer;
+            background: #fff;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .variant-option:hover {
+            border-color: var(--blue);
+        }
+
+        .variant-option input {
+            accent-color: var(--accent);
+            width: 18px;
+            height: 18px;
+            flex: 0 0 auto;
+        }
+
+        /* :has() styles the whole row from the radio inside it */
+        .variant-option:has(input:checked) {
+            border-color: var(--accent);
+            background: #fdf8ea;
+        }
+
+        .variant-option.disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        .variant-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .variant-label {
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .variant-meta {
+            font-size: 0.82rem;
+            color: var(--muted);
+        }
+
+        .variant-price {
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .variant-price .now {
+            font-weight: 700;
+            color: var(--accent-text);
+            font-size: 1.1rem;
+        }
+
+        .variant-price .was {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--muted);
+            text-decoration: line-through;
+        }
+
+        .qty-stepper {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .qty-stepper button {
+            width: 42px;
+            height: 42px;
+            border: none;
+            background: var(--light);
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: var(--dark);
+            font-family: inherit;
+        }
+
+        .qty-stepper button:hover {
+            background: var(--border);
+        }
+
+        .qty-stepper input {
+            width: 54px;
+            height: 42px;
+            border: none;
+            text-align: center;
+            font-size: 1rem;
+            font-family: inherit;
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+
+        .qty-stepper input::-webkit-outer-spin-button,
+        .qty-stepper input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* ============ SPEC / DETAIL BLOCKS (JSON driven) ============ */
+        .spec-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.93rem;
+        }
+
+        .spec-table th,
+        .spec-table td {
+            text-align: left;
+            padding: 0.6rem 0.75rem;
+            border-bottom: 1px solid var(--light);
+            vertical-align: top;
+        }
+
+        .spec-table th {
+            color: var(--muted);
+            font-weight: 600;
+            width: 42%;
+        }
+
+        .tick-list {
+            list-style: none;
+            display: grid;
+            gap: 0.45rem;
+        }
+
+        .tick-list li {
+            padding-left: 1.6rem;
+            position: relative;
+            font-size: 0.94rem;
+        }
+
+        .tick-list li::before {
+            content: '✔';
+            position: absolute;
+            left: 0;
+            color: var(--green);
+            font-weight: 700;
+        }
+
+        .tag-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+        }
+
+        .tag {
+            font-size: 0.8rem;
+            background: var(--light);
+            color: var(--dark);
+            padding: 0.25rem 0.7rem;
+            border-radius: 999px;
+        }
+
+        .faq-item {
+            border-bottom: 1px solid var(--light);
+            padding: 0.75rem 0;
+        }
+
+        .faq-item summary {
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .faq-item p {
+            margin-top: 0.5rem;
+            color: #5f6b73;
+            font-size: 0.93rem;
+        }
+
+        /* ============ CART / CHECKOUT ============ */
+        .shop-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+            gap: clamp(1.25rem, 3vw, 2rem);
+            align-items: start;
+        }
+
+        .cart-line {
+            display: grid;
+            grid-template-columns: 88px 1fr auto;
+            gap: 1rem;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--light);
+        }
+
+        .cart-line:last-child {
+            border-bottom: none;
+        }
+
+        .cart-line-img {
+            width: 88px;
+            height: 88px;
+            object-fit: cover;
+            border-radius: 8px;
+            background: var(--light);
+        }
+
+        .cart-line-title {
+            font-weight: 700;
+            color: var(--dark);
+            text-decoration: none;
+        }
+
+        .cart-line-title:hover {
+            color: var(--accent-text);
+        }
+
+        .cart-line-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+
+        .link-danger {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-family: inherit;
+            padding: 0;
+            text-decoration: underline;
+        }
+
+        .summary-card {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: clamp(1.1rem, 3vw, 1.6rem);
+            position: sticky;
+            top: calc(var(--header-h) + 1rem);
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.45rem 0;
+            font-size: 0.95rem;
+        }
+
+        .summary-row.total {
+            border-top: 2px solid var(--light);
+            margin-top: 0.5rem;
+            padding-top: 0.8rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .summary-note {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-top: 0.75rem;
+        }
+
+        .free-ship-bar {
+            background: #eafaf1;
+            border: 1px solid #b7e4c7;
+            color: #1e7d4f;
+            border-radius: 8px;
+            padding: 0.7rem 0.9rem;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        /* ============ FORMS ============ */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+            gap: 1rem;
+        }
+
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            min-width: 0;
+        }
+
+        .form-field.full {
+            grid-column: 1 / -1;
+        }
+
+        .form-field label {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .field-input,
+        .form-field input,
+        .form-field select,
+        .form-field textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem; /* 16px — stops iOS zooming on focus */
+            font-family: inherit;
+            background: #fff;
+            min-height: 44px;
+        }
+
+        .form-field textarea {
+            resize: vertical;
+        }
+
+        .field-error {
+            color: var(--danger);
+            font-size: 0.83rem;
+        }
+
+        .required::after {
+            content: ' *';
+            color: var(--danger);
+        }
+
+        .pay-option {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 0.9rem;
+            cursor: pointer;
+            margin-bottom: 0.75rem;
+            background: #fff;
+        }
+
+        .pay-option:has(input:checked) {
+            border-color: var(--accent);
+            background: #fdf8ea;
+        }
+
+        .pay-option input {
+            margin-top: 0.25rem;
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+        }
+
+        /* ============ ORDER TRACKING ============ */
+        .track-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.28rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+
+        .badge-green  { background: #d4edda; color: #155724; }
+        .badge-amber  { background: #fff3cd; color: #856404; }
+        .badge-blue   { background: #d1ecf1; color: #0c5460; }
+        .badge-red    { background: #f8d7da; color: #721c24; }
+        .badge-grey   { background: var(--light); color: var(--muted); }
+
+        .timeline {
+            list-style: none;
+            position: relative;
+            padding-left: 2.5rem;
+        }
+
+        /* The rail is drawn once behind all the dots */
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 1.05rem;
+            top: 0.6rem;
+            bottom: 0.6rem;
+            width: 2px;
+            background: var(--light);
+        }
+
+        .timeline li {
+            position: relative;
+            padding: 0 0 1.6rem 0;
+        }
+
+        .timeline li:last-child {
+            padding-bottom: 0;
+        }
+
+        .timeline .dot {
+            position: absolute;
+            left: -2.5rem;
+            top: 0;
+            width: 2.15rem;
+            height: 2.15rem;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid var(--light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+        }
+
+        .timeline li.done .dot {
+            border-color: var(--green);
+            background: #eafaf1;
+        }
+
+        .timeline li.current .dot {
+            border-color: var(--accent);
+            background: #fdf8ea;
+            box-shadow: 0 0 0 4px rgba(224,161,6,0.22);
+        }
+
+        .timeline .step-label {
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .timeline li:not(.done):not(.current) .step-label {
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .timeline .step-meta {
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        .progress-track {
+            height: 8px;
+            background: var(--light);
+            border-radius: 999px;
+            overflow: hidden;
+            margin: 0.75rem 0 1.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--green), #6ac47f);
+            border-radius: 999px;
+            transition: width 0.4s;
+        }
+
+        .kv-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+            gap: 1rem;
+        }
+
+        .kv-block h4 {
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--muted);
+            margin-bottom: 0.3rem;
+        }
+
+        .kv-block p {
+            font-size: 0.95rem;
+            color: var(--dark);
+        }
+
+        .order-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.93rem;
+        }
+
+        .order-table th {
+            text-align: left;
+            color: var(--muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 0.5rem 0.6rem;
+            border-bottom: 1px solid var(--light);
+        }
+
+        .order-table td {
+            padding: 0.7rem 0.6rem;
+            border-bottom: 1px solid var(--light);
+            vertical-align: middle;
+        }
+
+        .order-table td.num,
+        .order-table th.num {
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .copy-field {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            background: var(--light);
+            border-radius: 8px;
+            padding: 0.6rem 0.8rem;
+            font-family: 'Consolas', monospace;
+            font-size: 1rem;
+            word-break: break-all;
+        }
+
+        .copy-field button {
+            margin-left: auto;
+            flex: 0 0 auto;
+        }
+
+        /* ============ FOOTER ============ */
+        footer {
+            background-color: var(--dark);
+            color: white;
+            padding: clamp(1.25rem, 3.5vw, 2rem) var(--page-x);
+            margin-top: clamp(2rem, 6vw, 3rem);
+        }
+
+        /* The rest of the site is deliberately full-bleed, but four short link
+           lists stretched over a 1900px monitor read as empty space. Cap the
+           measure here so the columns stay a compact block. */
+        .footer-inner {
+            width: 100%;
+            max-width: 1100px;
+            margin-inline: auto;
+        }
+
+        .footer-cols {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr));
+            gap: 1rem 2rem;
+            text-align: left;
+            margin-bottom: 1.1rem;
+        }
+
+        .footer-cols h4 {
+            font-size: 0.85rem;
+            color: var(--accent-light);
+            margin-bottom: 0.4rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        /* On desktop the heading is a plain label -- it only becomes a tappable
+           accordion control below the mobile breakpoint */
+        .footer-toggle {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 0;
+            background: none;
+            border: none;
+            font: inherit;
+            color: inherit;
+            text-align: left;
+            letter-spacing: inherit;
+            text-transform: inherit;
+            cursor: default;
+        }
+
+        .footer-caret {
+            display: none;
+            margin-left: auto;
+            font-size: 0.9rem;
+            transition: transform 0.2s ease;
+        }
+
+        .footer-cols ul {
+            list-style: none;
+            display: grid;
+            gap: 0.25rem;
+        }
+
+        .footer-cols a,
+        footer a {
+            color: #cfd8dc;
+            text-decoration: none;
+            font-size: 0.86rem;
+        }
+
+        .footer-cols a:hover,
+        footer a:hover {
+            color: var(--accent-light);
+        }
+
+        /* Contact block is prose, not a list -- keep its lines tight together */
+        .footer-cols p {
+            font-size: 0.86rem;
+            line-height: 1.45;
+            color: #cfd8dc;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255,255,255,0.12);
+            padding-top: 0.85rem;
+            text-align: center;
+            font-size: 0.82rem;
+            color: #b0bec5;
+        }
+
+        /* Mobile footer: the link columns stack into tap-to-open accordions so
+           the footer is a few rows tall instead of one long scroll. Contact is
+           deliberately left open -- it is the block worth reading at a glance. */
+        @media (max-width: 768px) {
+            .footer-cols {
+                grid-template-columns: 1fr;
+                gap: 0;
+                margin-bottom: 0.9rem;
+            }
+
+            .footer-col {
+                border-bottom: 1px solid rgba(255,255,255,0.12);
+            }
+
+            .footer-col:last-child {
+                border-bottom: none;
+            }
+
+            .footer-cols h4 {
+                margin-bottom: 0;
+            }
+
+            .footer-toggle {
+                cursor: pointer;
+                padding: 0.85rem 0;
+                min-height: 44px;
+            }
+
+            .footer-caret {
+                display: inline-block;
+            }
+
+            .footer-toggle[aria-expanded="true"] .footer-caret {
+                transform: rotate(180deg);
+            }
+
+            /* Qualified with `ul` so these outrank `.footer-cols ul`, which is
+               one specificity point heavier than a bare `.footer-panel` and
+               would otherwise keep every panel permanently open */
+            .footer-cols ul.footer-panel {
+                display: none;
+                padding-bottom: 0.85rem;
+            }
+
+            .footer-cols ul.footer-panel.open {
+                display: grid;
+            }
+
+            .footer-col-static h4 {
+                padding: 0.85rem 0 0.45rem;
+            }
+        }
+
+        /* Compact farm->home strip repeated in the footer of every page */
+        .footer-journey {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.88rem;
+            color: #cfd8dc;
+        }
+
+        .footer-journey span {
+            white-space: nowrap;
+        }
+
+        /* ============ HOMEPAGE SECTIONS ============ */
+        /* Full-bleed bands sit OUTSIDE .container so the colour reaches the
+           screen edge; the inner wrapper re-applies the --page-x gutter. */
+        .band {
+            padding: clamp(2.25rem, 6vw, 4rem) var(--page-x);
+        }
+
+        .band-light { background: var(--light); }
+        .band-cream { background: #f4f1e2; }
+        .band-dark  { background: var(--dark); color: #fff; }
+        .band-dark .section-title,
+        .band-dark h2,
+        .band-dark h3 { color: #fff; }
+        .band-dark .section-lead { color: #d7e3d6; }
+
+        .band-inner { width: 100%; }
+
+        /* Centred heading + lead used at the top of most sections */
+        .section-head {
+            text-align: center;
+            max-width: 62ch;
+            margin: 0 auto clamp(1.5rem, 4vw, 2.5rem);
+        }
+
+        .section-head .section-lead {
+            margin: 0 auto;
+            max-width: none;
+        }
+
+        .section-eyebrow {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--accent-text);
+            margin-bottom: 0.4rem;
+        }
+
+        .band-dark .section-eyebrow { color: var(--accent-light); }
+
+        /* ---- USP strip: the four promises, straight under the banner ---- */
+        .usp-strip {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+            gap: clamp(1rem, 2.5vw, 1.75rem);
+            padding: clamp(1.5rem, 3.5vw, 2.4rem) var(--page-x);
+            /* Warm cream tint so the strip reads as its own band against the
+               banner above and the white product cards below */
+            background: linear-gradient(180deg, #f7f3e6, #f0ebda);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .usp-item {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            min-width: 0;
+        }
+
+        /* Circular badge keeps the icon from sitting loose in the row */
+        .usp-icon {
+            line-height: 1;
+            flex: 0 0 auto;
+            width: clamp(56px, 12vw, 68px);
+            height: clamp(56px, 12vw, 68px);
+            border-radius: 50%;
+            background: #fff;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(31, 77, 43, 0.08);
+            overflow: hidden;
+        }
+
+        /* `contain` so square and wide icon art both sit inside the circle
+           without being stretched or cropped */
+        .usp-icon img {
+            width: 62%;
+            height: 62%;
+            object-fit: contain;
+        }
+
+        .usp-item strong {
+            display: block;
+            color: var(--dark);
+            font-size: clamp(1rem, 2.2vw, 1.08rem);
+        }
+
+        .usp-item span {
+            font-size: clamp(0.86rem, 2vw, 0.92rem);
+            color: var(--muted);
+        }
+
+        /* ---- Two-column text + visual, flips on mobile ---- */
+        .split {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+            gap: clamp(1.5rem, 4vw, 3rem);
+            align-items: center;
+        }
+
+        .split-media img {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(31, 77, 43, 0.14);
+        }
+
+        /* Tall poster-style artwork: show it whole and centred rather than
+           cropping it to the 4:3 box above, which would cut the labels off */
+        .split-media.split-media-poster img {
+            aspect-ratio: auto;
+            width: auto;
+            max-width: 100%;
+            max-height: 620px;
+            object-fit: contain;
+            display: block;
+            margin-inline: auto;
+            box-shadow: 0 10px 28px rgba(31, 77, 43, 0.18);
+        }
+
+        /* Emoji-only stand-in until a real photo is uploaded */
+        .split-media-placeholder {
+            aspect-ratio: 4 / 3;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #e9e3cc, #f7f3e4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(3rem, 12vw, 6rem);
+        }
+
+        .split-body h2 { color: var(--dark); margin-bottom: 0.75rem; }
+        .split-body p  { color: #4b5a48; margin-bottom: 1rem; }
+        .split-body .tick-list { margin-bottom: 1.5rem; }
+
+        /* ---- Chekku machine showcase ---- */
+        .machine-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
+            gap: clamp(1rem, 3vw, 1.75rem);
+        }
+
+        .machine-card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.25s, box-shadow 0.25s;
+        }
+
+        .machine-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 26px rgba(31, 77, 43, 0.14);
+        }
+
+        /* `contain` not `cover`: these are product-style shots of machinery,
+           so cropping the edges off would cut the equipment in half */
+        .machine-photo {
+            aspect-ratio: 4 / 3;
+            background: #f7f3e6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem;
+        }
+
+        .machine-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .machine-body {
+            padding: 1rem 1.15rem 1.25rem;
+            border-top: 1px solid var(--light);
+        }
+
+        .machine-body h3 {
+            font-size: 1.02rem;
+            color: var(--dark);
+            margin-bottom: 0.3rem;
+        }
+
+        .machine-body p {
+            font-size: 0.88rem;
+            color: var(--muted);
+        }
+
+        .machine-tag {
+            display: inline-block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            background: var(--light);
+            color: var(--accent-text);
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            margin-bottom: 0.5rem;
+        }
+
+        /* ---- Benefit / feature cards ---- */
+        .benefit-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
+            gap: clamp(1rem, 3vw, 1.75rem);
+        }
+
+        .benefit-card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: clamp(1.25rem, 3vw, 1.75rem);
+            transition: transform 0.25s, box-shadow 0.25s;
+            text-align: center;
+        }
+
+        .benefit-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 26px rgba(31, 77, 43, 0.12);
+        }
+
+        /* Alignment comes from .benefit-card, which centres the whole box */
+        .benefit-icon {
+            line-height: 1;
+            margin-bottom: 0.75rem;
+        }
+
+        /* The global reset makes images display:block, so text-align on the
+           card does not move them -- auto side margins do the centring */
+        .benefit-icon img {
+            width: 52px;
+            height: 52px;
+            object-fit: contain;
+            margin-inline: auto;
+        }
+
+        .benefit-card h3 {
+            font-size: 1.08rem;
+            color: var(--dark);
+            margin-bottom: 0.4rem;
+        }
+
+        .benefit-card p {
+            font-size: 0.92rem;
+            color: var(--muted);
+        }
+
+        /* ---- Counters ---- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(150px, 45%), 1fr));
+            gap: clamp(1rem, 3vw, 2rem);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: clamp(1.75rem, 6vw, 2.75rem);
+            font-weight: 800;
+            color: var(--accent-light);
+            line-height: 1.1;
+        }
+
+        .stat-label {
+            font-size: 0.88rem;
+            color: #d7e3d6;
+            margin-top: 0.25rem;
+        }
+
+        /* ---- Customer reviews ---- */
+        .testimonial-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(290px, 100%), 1fr));
+            gap: clamp(1rem, 3vw, 1.75rem);
+        }
+
+        .testimonial-card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--accent);
+            border-radius: 12px;
+            padding: clamp(1.25rem, 3vw, 1.6rem);
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .stars {
+            color: var(--accent);
+            font-size: 1rem;
+            letter-spacing: 0.1em;
+        }
+
+        .testimonial-card blockquote {
+            font-size: 0.95rem;
+            color: #4b5a48;
+            font-style: italic;
+            flex: 1;
+        }
+
+        .testimonial-who {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            border-top: 1px solid var(--light);
+            padding-top: 0.75rem;
+        }
+
+        /* Initial-in-a-circle avatar — no image files to host or lazy-load */
+        .testimonial-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--dark);
+            color: var(--accent-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex: 0 0 auto;
+        }
+
+        .testimonial-name {
+            font-weight: 700;
+            color: var(--dark);
+            font-size: 0.94rem;
+        }
+
+        .testimonial-meta {
+            font-size: 0.82rem;
+            color: var(--muted);
+        }
+
+        /* ---- FAQ accordion ---- */
+        .faq-list {
+            max-width: 860px;
+            margin: 0 auto;
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .faq-q {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem 1.15rem;
+        }
+
+        .faq-q summary {
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--dark);
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .faq-q summary::-webkit-details-marker { display: none; }
+
+        .faq-q summary::after {
+            content: '+';
+            font-size: 1.4rem;
+            line-height: 1;
+            color: var(--accent-text);
+            flex: 0 0 auto;
+        }
+
+        .faq-q[open] summary::after { content: '\2013'; }
+
+        .faq-q p {
+            margin-top: 0.75rem;
+            color: var(--muted);
+            font-size: 0.93rem;
+        }
+
+        /* ---- Closing call to action ---- */
+        .cta-band {
+            text-align: center;
+        }
+
+        .cta-band h2 {
+            font-size: clamp(1.4rem, 4.5vw, 2.1rem);
+            margin-bottom: 0.75rem;
+        }
+
+        .cta-band p {
+            max-width: 60ch;
+            margin: 0 auto 1.75rem;
+            color: #d7e3d6;
+        }
+
+        .cta-band .btn-row { justify-content: center; }
+
+        /* ---- Long-form SEO copy: readable measure, muted so it doesn't
+               compete with the shopping sections above it ---- */
+        .seo-copy {
+            max-width: 78ch;
+            margin: 0 auto;
+            font-size: 0.93rem;
+            color: var(--muted);
+        }
+
+        .seo-copy h2 {
+            font-size: 1.2rem;
+            color: var(--dark);
+            margin-bottom: 0.75rem;
+        }
+
+        .seo-copy h3 {
+            font-size: 1rem;
+            color: var(--dark);
+            margin: 1.25rem 0 0.4rem;
+        }
+
+        .seo-copy p { margin-bottom: 0.75rem; }
+
+        /* ============ RESPONSIVE ============ */
+        @media (max-width: 900px) {
+            .shop-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-card {
+                position: static;
+            }
+        }
+
+        /* ============ MOBILE: LEFT SLIDE-IN DRAWER ============ */
+        @media (max-width: 768px) {
+            .nav-toggle {
+                display: flex;
+            }
+
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .journey-step::after {
+                display: none;
+            }
+
+            /* The menu leaves the header and becomes an off-canvas drawer.
+               It stays display:flex and hides via transform, so the slide-in
+               can animate. */
+            nav ul#site-menu {
+                display: flex;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: min(360px, 88vw);
+                height: 100vh;
+                height: 100dvh;
+                flex-basis: auto;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0;
+                padding: 0;
+                background: var(--page-bg);
+                color: var(--ink);
+                box-shadow: 2px 0 26px rgba(0,0,0,0.28);
+                overflow-y: auto;
+                overscroll-behavior: contain;
+                z-index: 140;
+                transform: translateX(-100%);
+                visibility: hidden;
+                transition: transform 0.28s ease, visibility 0.28s;
+            }
+
+            nav ul#site-menu.open {
+                transform: translateX(0);
+                visibility: visible;
+            }
+
+            /* Every row is icon + label on one baseline */
+            nav ul a {
+                display: flex;
+                align-items: center;
+                gap: 0.85rem;
+                padding: 0.95rem 1.15rem;
+                color: var(--ink);
+                font-size: 1rem;
+                font-weight: 500;
+                border-bottom: none;
+            }
+
+            nav ul a:hover,
+            nav ul a:focus-visible {
+                background: var(--light);
+                color: var(--dark);
+            }
+
+            /* Line icons inherit the row colour, so hover tints them too */
+            .nav-ico {
+                display: block;
+                width: 22px;
+                height: 22px;
+                flex-shrink: 0;
+                stroke: currentColor;
+                stroke-width: 1.7;
+                fill: none;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+                opacity: 0.85;
+            }
+
+            /* ---- Drawer head: close on the left, logo centred ---- */
+            .drawer-head {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.7rem 1rem;
+                border-bottom: 1px solid var(--border);
+                background: #fff;
+            }
+
+            .drawer-close {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 40px;
+                height: 40px;
+                flex-shrink: 0;
+                border: none;
+                border-radius: 8px;
+                background: transparent;
+                color: var(--ink);
+                font-size: 1.75rem;
+                line-height: 1;
+                cursor: pointer;
+            }
+
+            .drawer-close:hover {
+                background: var(--light);
+            }
+
+            /* Logo sits optically centred: the 40px close button on the left is
+               balanced by an equal spacer reserved on the right */
+            .drawer-logo {
+                display: block;
+                height: 34px;
+                width: auto;
+                margin-inline: auto;
+                transform: translateX(-20px);
+            }
+
+            /* ---- Search ---- */
+            .drawer-search {
+                display: block;
+                padding: 0.85rem 1rem;
+                background: #fff;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .drawer-search form {
+                display: flex;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                overflow: hidden;
+                background: var(--page-bg);
+            }
+
+            .drawer-search input {
+                flex: 1 1 auto;
+                min-width: 0;
+                border: none;
+                background: transparent;
+                padding: 0.7rem 0.85rem;
+                font: inherit;
+                font-size: 0.95rem;
+                color: var(--ink);
+            }
+
+            .drawer-search input:focus {
+                outline: none;
+            }
+
+            .drawer-search form:focus-within {
+                border-color: var(--dark);
+            }
+
+            .drawer-search button {
+                flex: 0 0 auto;
+                width: 46px;
+                border: none;
+                background: var(--dark);
+                color: #fff;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .drawer-search .nav-ico {
+                display: block;
+                opacity: 1;
+            }
+
+            /* ---- Account row + social strip at the foot ---- */
+            .drawer-account {
+                display: block;
+                margin-top: 0.4rem;
+                border-top: 1px solid var(--border);
+            }
+
+            .drawer-account a {
+                color: var(--muted);
+                font-weight: 500;
+            }
+
+            /* margin-top:auto pins the strip to the bottom when the menu is
+               short, but lets it flow when the list overflows */
+            .drawer-foot {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 1.5rem;
+                margin-top: auto;
+                padding: 1.15rem 1rem calc(1.15rem + env(safe-area-inset-bottom));
+                border-top: 1px solid var(--border);
+                background: var(--light);
+            }
+
+            .drawer-foot a {
+                display: flex;
+                padding: 0;
+                border: none;
+                color: var(--dark);
+            }
+
+            .drawer-foot a:hover {
+                background: transparent;
+                color: var(--accent-text);
+            }
+
+            .drawer-foot .nav-ico {
+                width: 24px;
+                height: 24px;
+                opacity: 1;
+            }
+
+            /* Must stay BELOW header's z-index:100. The header is sticky with a
+               z-index, so it opens a stacking context and the drawer's
+               z-index:140 is scoped inside it -- a backdrop above 100 paints
+               over the drawer itself and greys the whole menu out. */
+            .nav-backdrop {
+                display: block;
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.55);
+                z-index: 90;
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.28s, visibility 0.28s;
+            }
+
+            .nav-backdrop.show {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            /* Inside the drawer the products panel is an indented block,
+               not a floating popup */
+            /* The expandable row matches a plain link, plus a chevron that
+               rotates to point down once the panel is open */
+            .drop-toggle {
+                display: flex;
+                align-items: center;
+                gap: 0.85rem;
+                width: 100%;
+                padding: 0.95rem 1.15rem;
+                color: var(--ink);
+                font-size: 1rem;
+                font-weight: 500;
+                border-bottom: none;
+            }
+
+            .drop-toggle:hover,
+            .drop-toggle:focus-visible {
+                background: var(--light);
+            }
+
+            .drop-toggle .caret {
+                display: none;
+            }
+
+            .drop-chevron {
+                margin-left: auto;
+                transition: transform 0.2s ease;
+            }
+
+            .drop-toggle[aria-expanded="true"] .drop-chevron {
+                transform: rotate(90deg);
+            }
+
+            .drop-menu {
+                position: static;
+                transform: none;
+                min-width: 0;
+                max-height: none;
+                background: var(--light);
+                box-shadow: none;
+                border-radius: 0;
+                padding: 0;
+            }
+
+            .drop-menu::before {
+                display: none;
+            }
+
+            .drop-menu a {
+                color: var(--ink);
+                border-bottom: none;
+                border-radius: 0;
+                padding: 0.7rem 1.15rem 0.7rem 3.1rem;
+                font-size: 0.95rem;
+                font-weight: 400;
+            }
+
+            .drop-menu a:hover,
+            .drop-menu a:focus-visible {
+                background: var(--border);
+                color: var(--dark);
+            }
+
+            .drop-menu.mega {
+                padding: 0;
+            }
+
+            .mega-all {
+                margin-bottom: 0;
+                border-bottom: 1px solid var(--border);
+                font-weight: 600;
+            }
+
+            .mega-cols {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+
+            .mega-head {
+                color: var(--dark);
+                border-bottom: 1px solid var(--border);
+                margin-bottom: 0;
+                font-weight: 600;
+            }
+
+            /* Subcategories indent one step past their category heading */
+            .mega-col a {
+                padding-left: 4rem;
+                font-size: 0.9rem;
+            }
+
+            .mega-empty {
+                padding: 0.7rem 1.15rem 0.7rem 4rem;
+                color: var(--muted);
+            }
+        }
+
+        @media (max-width: 560px) {
+            .cart-line {
+                grid-template-columns: 64px 1fr;
+            }
+
+            .cart-line-img {
+                width: 64px;
+                height: 64px;
+            }
+
+            .cart-line-price {
+                grid-column: 2;
+                text-align: left;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .btn-row .btn {
+                width: 100%;
+            }
+
+            .product-info .btn {
+                align-self: stretch;
+            }
+
+            .cart-link span.cart-text {
+                display: none;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation: none !important;
+                transition: none !important;
+                scroll-behavior: auto !important;
+            }
+        }
+    </style>
+
+    {# Tells Google who the business is - powers the knowledge panel and the #}
+    {# sitelinks search box. Per-page structured data goes in the schema block. #}
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "OnlineStore",
+      "name": "{{ store.name }}",
+      "url": "{{ request.scheme }}://{{ request.get_host }}{% url 'website:home' %}",
+      "logo": "{{ request.scheme }}://{{ request.get_host }}{% static 'img/logo-192.png' %}",
+      "description": "Cold pressed and wood pressed edible oils, nuts and traditional foods sourced directly from farmers in Tamil Nadu.",
+      "telephone": "{{ store.support_phone }}",
+      "email": "{{ store.support_email }}",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "{{ store.address }}",
+        "addressRegion": "Tamil Nadu",
+        "addressCountry": "IN"
+      },
+      "areaServed": "IN",
+      "currenciesAccepted": "INR",
+      "paymentAccepted": "UPI, Cash on Delivery"
+    }
+    </script>
+    {% block schema %}{% endblock %}
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    
+    <div class="topbar">
+        <div class="ticker">
+            <div class="ticker-track">
+                {% for pass in "12" %}
+                    <ul class="ticker-group" {% if not forloop.first %}aria-hidden="true"{% endif %}>
+                        <li>
+                            <img class="ticker-ico" src="{% static 'img/icon/honey.png' %}"
+                                 alt="" width="20" height="20" decoding="async">
+                            Purity in every drop
+                        </li>
+                        <li>
+                            <img class="ticker-ico" src="{% static 'img/icon/transport.png' %}"
+                                 alt="" width="20" height="20" decoding="async">
+                            Free shipping across Tamil Nadu, Puducherry, Kerala, Karnataka, Andhra Pradesh &amp; Telangana
+                        </li>
+                        <li>
+                            <img class="ticker-ico" src="{% static 'img/icon/trolley.png' %}"
+                                 alt="" width="20" height="20" decoding="async">
+                            Free delivery on orders above ₹{{ store.free_shipping_above|floatformat:0 }}
+                        </li>
+                        <li>
+                            <img class="ticker-ico" src="{% static 'img/icon/certified.png' %}"
+                                 alt="" width="20" height="20" decoding="async">
+                            Cold pressed, lab tested, freshly packed
+                        </li>
+                        <li>
+                            <img class="ticker-ico" src="{% static 'img/icon/sprout.png' %}"
+                                 alt="" width="20" height="20" decoding="async">
+                            Straight from the farmer, no middlemen
+                        </li>
+                        <li>
+                            <a href="{% url 'website:track_order' %}" {% if not forloop.first %}tabindex="-1"{% endif %}>Track order</a>
+                            <a href="tel:{{ store.support_phone }}" {% if not forloop.first %}tabindex="-1"{% endif %}>{{ store.support_phone }}</a>
+                        </li>
+                        <li>
+                            
+                        </li>
+                    </ul>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <header>
+        <nav>
+            <a class="logo" href="{% url 'website:home' %}">
+                <img src="{% static 'img/logo-192.png' %}" alt="Avee Foods logo" width="192" height="192">
+                <span>Avee Foods</span>
+            </a>
+
+            <div class="nav-actions">
+                {# aria-label carries the name on mobile, where .cart-text is hidden #}
+                <a class="cart-link" href="{% url 'website:cart_detail' %}" aria-label="Cart">
+                    <img class="cart-icon" src="{% static 'img/icon/cart.png' %}" alt=""
+                         width="20" height="20" decoding="async">
+                    <span class="cart-text">Cart</span>
+                    <span class="cart-count">{{ cart_count|default:0 }}</span>
+                </a>
+                <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="site-menu">
+                    <span></span><span></span><span></span>
+                </button>
+            </div>
+
+            <ul id="site-menu">
+                <li class="drawer-head">
+                    <button class="drawer-close" type="button" aria-label="Close menu">&times;</button>
+                    <img class="drawer-logo" src="{% static 'img/logo-192.png' %}"
+                         alt="Avee Foods" width="192" height="192">
+                </li>
+
+                <li class="drawer-search">
+                    {# Hits the existing ?q= filter on the product list -- no new view needed #}
+                    <form action="{% url 'website:food_products' %}" method="get" role="search">
+                        <input type="search" name="q" placeholder="Search oils, ghee, honey..."
+                               aria-label="Search products">
+                        <button type="submit" aria-label="Search">
+                            <svg class="nav-ico" viewBox="0 0 24 24" aria-hidden="true">
+                                <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+                            </svg>
+                        </button>
+                    </form>
+                </li>
+
+                <li>
+                    <a href="{% url 'website:home' %}">
+                        <svg class="nav-ico" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/>
+                        </svg>
+                        Home
+                    </a>
+                </li>
+                {# "Products" opens a panel of categories, each with its subcategories #}
+                {% if nav_categories %}
+                    <li class="has-drop">
+                        <button class="drop-toggle" type="button" aria-expanded="false"
+                                aria-controls="products-menu">
+                            <svg class="nav-ico" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M3 7h18l-1.4 12.2a2 2 0 0 1-2 1.8H6.4a2 2 0 0 1-2-1.8Z"/>
+                                <path d="M8.5 7V5.5a3.5 3.5 0 0 1 7 0V7"/>
+                            </svg>
+                            Products
+                        </button>
+
+                        <div class="drop-menu mega" id="products-menu">
+                            <a class="mega-all" href="{% url 'website:food_products' %}">
+                                🧺 All products
+                            </a>
+
+                            <div class="mega-cols">
+                                {% for category in nav_categories %}
+                                    <div class="mega-col">
+                                        <a class="mega-head"
+                                           href="{% url 'website:food_products' %}?category={{ category.slug }}">
+                                            {{ category.label }}
+                                        </a>
+                                        <ul>
+                                            {% for sub in category.menu_subcategories %}
+                                                <li>
+                                                    <a href="{% url 'website:food_products' %}?category={{ category.slug }}&amp;subcategory={{ sub.slug }}">
+                                                        {{ sub.name }}
+                                                    </a>
+                                                </li>
+                                            {% empty %}
+                                                <li><span class="mega-empty">No subcategories yet</span></li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </li>
+                {% else %}
+                    <li>
+                        <a href="{% url 'website:food_products' %}">
+                            <svg class="nav-ico" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M3 7h18l-1.4 12.2a2 2 0 0 1-2 1.8H6.4a2 2 0 0 1-2-1.8Z"/>
+                                <path d="M8.5 7V5.5a3.5 3.5 0 0 1 7 0V7"/>
+                            </svg>
+                            Products
+                        </a>
+                    </li>
+                {% endif %}
+
+                <li>
+                    <a href="{% url 'website:combos' %}">
+                        <svg class="nav-ico" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M3 11h18v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"/>
+                            <path d="M2.5 7.5h19V11h-19z"/><path d="M12 7.5V21"/>
+                            <path d="M12 7.5S10.8 3 8.4 3a2.2 2.2 0 0 0 0 4.5Z"/>
+                            <path d="M12 7.5S13.2 3 15.6 3a2.2 2.2 0 0 1 0 4.5Z"/>
+                        </svg>
+                        Combos
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'website:gallery' %}">
+                        <svg class="nav-ico" viewBox="0 0 24 24" aria-hidden="true">
+                            <rect x="3" y="4" width="18" height="16" rx="2"/>
+                            <circle cx="8.5" cy="9.5" r="1.5"/><path d="m4 17 5-4.5 4 3.5 3-2.5 4 3.5"/>
+                        </svg>
+                        Gallery
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'website:about' %}">
+                        <svg class="nav-ico" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 21s-7-4.6-7-10a7 7 0 0 1 14 0c0 5.4-7 10-7 10Z"/>
+                            <path d="M12 14c0-3 1.6-5 4-5.5C15.6 11.4 14.2 13.4 12 14Z"/>
+                            <path d="M12 14c0-3-1.6-5-4-5.5C8.4 11.4 9.8 13.4 12 14Z"/>
+                        </svg>
+                        About
+                    </a>
+                </li>
+
+                {# Muted account row, split off by a rule -- mirrors the reference #}
+                <li class="drawer-account">
+                    <a href="{% if user.is_authenticated %}{% url 'website:my_orders' %}{% else %}{% url 'website:track_order' %}{% endif %}">
+                        <svg class="nav-ico" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="12" cy="8" r="3.5"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>
+                        </svg>
+                        {% if user.is_authenticated %}My orders{% else %}My account{% endif %}
+                    </a>
+                </li>
+
+                {# Only the channels filled in under STORE in settings.py render #}
+                <li class="drawer-foot">
+                    {% if store.facebook %}
+                        <a href="{{ store.facebook }}" target="_blank" rel="noopener" aria-label="Facebook">
+                            <svg class="nav-ico" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M14.5 21v-8h2.7l.4-3h-3.1V8.2c0-.9.3-1.5 1.5-1.5h1.7V4a21 21 0 0 0-2.4-.1c-2.5 0-4.1 1.5-4.1 4.2V10H8.5v3h2.7v8Z"/>
+                            </svg>
+                        </a>
+                    {% endif %}
+                    {% if store.instagram %}
+                        <a href="{{ store.instagram }}" target="_blank" rel="noopener" aria-label="Instagram">
+                            <svg class="nav-ico" viewBox="0 0 24 24" aria-hidden="true">
+                                <rect x="3" y="3" width="18" height="18" rx="5"/>
+                                <circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/>
+                            </svg>
+                        </a>
+                    {% endif %}
+                    {% if store.youtube %}
+                        <a href="{{ store.youtube }}" target="_blank" rel="noopener" aria-label="YouTube">
+                            <svg class="nav-ico" viewBox="0 0 24 24" aria-hidden="true">
+                                <rect x="2.5" y="5.5" width="19" height="13" rx="4"/>
+                                <path d="m10.5 9.5 5 2.5-5 2.5Z"/>
+                            </svg>
+                        </a>
+                    {% endif %}
+                    {% if store.whatsapp %}
+                        <a href="https://wa.me/{{ store.whatsapp }}" target="_blank" rel="noopener" aria-label="WhatsApp">
+                            <svg class="nav-ico" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M3.5 20.5 4.8 16A8 8 0 1 1 8 19.2Z"/>
+                                <path d="M9 9.2c.3 2.4 3.4 5.5 5.8 5.8l1-1.4 1.8.9c-.3 1.2-1.5 1.7-2.6 1.5-3-.5-6.2-3.7-6.7-6.7-.2-1.1.3-2.3 1.5-2.6l.9 1.8Z"/>
+                            </svg>
+                        </a>
+                    {% endif %}
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="nav-backdrop" id="nav-backdrop"></div>
+
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <div class="footer-inner">
+            <!-- <img class="footer-logo" src="{% static 'img/logo-192.png' %}" alt="Avee Foods logo" width="192" height="192"> -->
+
+         
+            <div class="footer-cols">
+                <div class="footer-col">
+                    <h4>
+                        <button class="footer-toggle" type="button"
+                                aria-expanded="false" aria-controls="footer-shop">
+                            Shop <span class="footer-caret" aria-hidden="true">&#9662;</span>
+                        </button>
+                    </h4>
+                    <ul class="footer-panel" id="footer-shop">
+                        <li><a href="{% url 'website:food_products' %}">All products</a></li>
+                        {% for category in nav_categories %}
+                            <li><a href="{{ category.get_absolute_url }}">{{ category.name }}</a></li>
+                        {% endfor %}
+                        <li><a href="{% url 'website:combos' %}">Combos</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>
+                        <button class="footer-toggle" type="button"
+                                aria-expanded="false" aria-controls="footer-orders">
+                            Orders <span class="footer-caret" aria-hidden="true">&#9662;</span>
+                        </button>
+                    </h4>
+                    <ul class="footer-panel" id="footer-orders">
+                        <li><a href="{% url 'website:cart_detail' %}">My cart</a></li>
+                        <li><a href="{% url 'website:track_order' %}">Track my order</a></li>
+                        {% if user.is_authenticated %}
+                            <li><a href="{% url 'website:my_orders' %}">Order history</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>
+                        <button class="footer-toggle" type="button"
+                                aria-expanded="false" aria-controls="footer-company">
+                            Company <span class="footer-caret" aria-hidden="true">&#9662;</span>
+                        </button>
+                    </h4>
+                    <ul class="footer-panel" id="footer-company">
+                        <li><a href="{% url 'website:about' %}">About us</a></li>
+                        <li><a href="{% url 'website:gallery' %}">Gallery</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col footer-col-static">
+                    <h4>Contact</h4>
+                    <p>{{ store.address }}</p>
+                    <p><a href="tel:{{ store.support_phone }}">{{ store.support_phone }}</a></p>
+                    <p><a href="mailto:{{ store.support_email }}">{{ store.support_email }}</a></p>
+                    <p style="margin-top:0.4rem; font-size:0.76rem;">
+                        FSSAI: {{ store.fssai_number }} · GSTIN: {{ store.gst_number }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2026 Avee Foods. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        (function () {
+            // ---- Mobile left drawer ----
+            var toggle = document.querySelector('.nav-toggle');
+            var menu = document.getElementById('site-menu');
+            var backdrop = document.getElementById('nav-backdrop');
+            var closeBtn = document.querySelector('.drawer-close');
+
+            function setDrawer(open) {
+                if (!menu) return;
+                menu.classList.toggle('open', open);
+                if (backdrop) backdrop.classList.toggle('show', open);
+                if (toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+                // Stop the page behind the drawer from scrolling with it
+                document.body.style.overflow = open ? 'hidden' : '';
+            }
+
+            if (toggle && menu) {
+                toggle.addEventListener('click', function () {
+                    setDrawer(!menu.classList.contains('open'));
+                });
+            }
+            if (closeBtn) closeBtn.addEventListener('click', function () { setDrawer(false); });
+            if (backdrop) backdrop.addEventListener('click', function () { setDrawer(false); });
+
+            // Back on desktop the drawer styles no longer apply, so clear the
+            // open state or the body would stay scroll-locked
+            window.addEventListener('resize', function () {
+                if (window.innerWidth > 768) setDrawer(false);
+            });
+
+            // Category dropdowns. CSS :hover handles the desktop pointer case;
+            // this adds click/tap, which is the only way in on touch screens.
+            var drops = Array.prototype.slice.call(document.querySelectorAll('.has-drop'));
+
+            function closeDrops(except) {
+                drops.forEach(function (drop) {
+                    if (drop === except) return;
+                    drop.querySelector('.drop-menu').classList.remove('open');
+                    drop.querySelector('.drop-toggle').setAttribute('aria-expanded', 'false');
+                });
+            }
+
+            drops.forEach(function (drop) {
+                var button = drop.querySelector('.drop-toggle');
+                var panel = drop.querySelector('.drop-menu');
+
+                button.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    var open = panel.classList.toggle('open');
+                    button.setAttribute('aria-expanded', open ? 'true' : 'false');
+                    closeDrops(drop);
+                });
+            });
+
+            // A tap inside the drawer must not bubble up and close the panel
+            if (menu) menu.addEventListener('click', function (e) { e.stopPropagation(); });
+
+            document.addEventListener('click', function () { closeDrops(null); });
+            document.addEventListener('keydown', function (e) {
+                if (e.key !== 'Escape') return;
+                closeDrops(null);
+                setDrawer(false);
+            });
+
+            // ---- Mobile footer accordions ----
+            // Desktop shows every panel via CSS regardless of the class, so the
+            // buttons must not keep announcing "collapsed" up there.
+            var footerToggles = Array.prototype.slice
+                .call(document.querySelectorAll('.footer-toggle'));
+
+            function syncFooterToggles() {
+                var desktop = window.innerWidth > 768;
+                footerToggles.forEach(function (button) {
+                    var panel = document.getElementById(button.getAttribute('aria-controls'));
+                    var open = desktop || (panel && panel.classList.contains('open'));
+                    button.setAttribute('aria-expanded', open ? 'true' : 'false');
+                });
+            }
+
+            syncFooterToggles();
+            window.addEventListener('resize', syncFooterToggles);
+
+            document.addEventListener('click', function (e) {
+                var button = e.target.closest('.footer-toggle');
+                if (!button) return;
+                var panel = document.getElementById(button.getAttribute('aria-controls'));
+                if (!panel) return;
+                var open = panel.classList.toggle('open');
+                button.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+
+            // Quantity steppers: [-] [n] [+] next to any number input
+            document.addEventListener('click', function (e) {
+                var button = e.target.closest('.qty-stepper button');
+                if (!button) return;
+                e.preventDefault();
+                var input = button.parentElement.querySelector('input');
+                if (!input) return;
+                var step = button.dataset.step === 'up' ? 1 : -1;
+                var min = parseInt(input.min || '1', 10);
+                var max = parseInt(input.max || '99', 10);
+                var next = (parseInt(input.value, 10) || min) + step;
+                input.value = Math.max(min, Math.min(max, next));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+
+            // Copy-to-clipboard for UPI ids and order numbers
+            document.addEventListener('click', function (e) {
+                var button = e.target.closest('[data-copy]');
+                if (!button) return;
+                e.preventDefault();
+                navigator.clipboard.writeText(button.dataset.copy).then(function () {
+                    var original = button.textContent;
+                    button.textContent = 'Copied!';
+                    setTimeout(function () { button.textContent = original; }, 1500);
+                });
+            });
+        })();
+    </script>
+</body>
+</html>

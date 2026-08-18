@@ -1,0 +1,32 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Delete Home Banner - Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">🗑️ Delete Home Banner</h1>
+</div>
+
+<div class="form-container">
+    <p style="margin-bottom: 1rem;">
+        Delete this {{ banner.get_media_type_display|lower }}
+        {% if banner.title %}(<strong>{{ banner.title }}</strong>){% endif %}?
+        It will be removed from the home page. This cannot be undone.
+    </p>
+
+    {% if banner.is_video %}
+        <video src="{{ banner.file.url }}" controls muted preload="metadata"
+               style="max-width: 320px; width: 100%; border-radius: 6px; background:#000;"></video>
+    {% else %}
+        <img src="{{ banner.file.url }}" alt="" class="image-preview">
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-buttons">
+            <button type="submit" class="btn btn-danger">Yes, delete it</button>
+            <a href="{% url 'dashboard:banners_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

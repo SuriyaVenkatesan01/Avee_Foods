@@ -1,0 +1,94 @@
+{% extends 'website/base.html' %}
+
+{% block title %}{% if category %}{{ category.name }}{% else %}All Products{% endif %} - Avee Foods{% endblock %}
+
+{% block content %}
+<div class="container page-centered">
+    <h1 class="page-title">
+        {% if subcategory %}{{ category.icon }} {{ subcategory.name }}
+        {% elif category %}{{ category.label }}
+        {% elif query %}Results for "{{ query }}"
+        {% else %}Our Products{% endif %}
+    </h1>
+    {% if category.tagline %}
+        <p class="section-lead" style="margin-top:-1rem;">{{ category.tagline }}</p>
+    {% endif %}
+
+    {% if categories %}
+        <div class="pill-row">
+            <a href="{% url 'website:food_products' %}"
+               class="pill {% if not selected_category %}active{% endif %}">All products</a>
+            {% for cat in categories %}
+                <a href="?category={{ cat.slug }}"
+                   class="pill {% if selected_category == cat.slug %}active{% endif %}">
+                    {{ cat.icon }} {{ cat.name }} ({{ cat.product_count }})
+                </a>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {# Second row: the chosen category's subcategories #}
+    {% if subcategories %}
+        <div class="pill-row sub-pill-row">
+            <span class="pill-label">{{ category.name }}:</span>
+            <a href="?category={{ selected_category }}"
+               class="pill pill-sub {% if not selected_subcategory %}active{% endif %}">All</a>
+            {% for sub in subcategories %}
+                <a href="?category={{ selected_category }}&amp;subcategory={{ sub.slug }}"
+                   class="pill pill-sub {% if selected_subcategory == sub.slug %}active{% endif %}">
+                    {{ sub.name }} ({{ sub.product_count }})
+                </a>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <form method="get" class="filter-bar">
+        {# Keep the active category and subcategory when searching or sorting #}
+        {% if selected_category %}
+            <input type="hidden" name="category" value="{{ selected_category }}">
+        {% endif %}
+        {% if selected_subcategory %}
+            <input type="hidden" name="subcategory" value="{{ selected_subcategory }}">
+        {% endif %}
+
+        <input type="search" name="q" value="{{ query }}" placeholder="Search products…" aria-label="Search products">
+
+        <select name="pack" aria-label="Filter by pack size">
+            <option value="">All pack sizes</option>
+            {% for label in pack_labels %}
+                <option value="{{ label }}" {% if selected_pack == label %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="sort" aria-label="Sort products">
+            <option value="">Sort: Featured</option>
+            <option value="price_low" {% if sort == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+            <option value="price_high" {% if sort == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+            <option value="name" {% if sort == 'name' %}selected{% endif %}>Name: A to Z</option>
+        </select>
+
+        <button type="submit" class="btn btn-small">Apply</button>
+        {% if query or selected_pack or sort %}
+            <a href="{% url 'website:food_products' %}{% if selected_category %}?category={{ selected_category }}{% if selected_subcategory %}&amp;subcategory={{ selected_subcategory }}{% endif %}{% endif %}"
+               class="btn btn-outline btn-small">Clear</a>
+        {% endif %}
+    </form>
+
+    {% if products %}
+        <div class="products-grid">
+            {% for product in products %}
+                {% include 'website/partials/_product_card.html' with product=product %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state" style="margin-bottom:3rem;">
+            <p style="font-size:1.1rem;">🔍 No products match this filter.</p>
+            <a href="{% url 'website:food_products' %}" class="btn btn-outline btn-small" style="margin-top:1rem;">
+                Show all products
+            </a>
+        </div>
+    {% endif %}
+
+    {% include 'website/partials/_journey.html' with stages=process_stages compact=1 %}
+</div>
+{% endblock %}

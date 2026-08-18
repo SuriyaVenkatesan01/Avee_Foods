@@ -1,0 +1,291 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Order {{ order.order_number }} - Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">🧾 {{ order.order_number }}</h1>
+        <p style="color: #7f8c8d;">
+            Placed {{ order.placed_at|date:"d M Y, g:i a" }} ·
+            {{ order.status_icon }} {{ order.get_status_display }} ·
+            {{ order.get_payment_method_display }} ({{ order.get_payment_status_display }})
+        </p>
+    </div>
+    <div class="action-buttons">
+        <a href="{% url 'dashboard:order_invoice' order.order_number %}" class="btn btn-secondary" target="_blank">🖨️ Invoice</a>
+        <a href="{% url 'dashboard:orders_list' %}" class="btn">Back to orders</a>
+    </div>
+</div>
+
+<style>
+    .order-cols {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+        gap: clamp(1rem, 3vw, 2rem);
+        align-items: start;
+    }
+
+    .order-timeline { list-style: none; padding-left: 1.75rem; position: relative; }
+    .order-timeline::before {
+        content: ''; position: absolute; left: 0.45rem; top: 0.5rem; bottom: 0.5rem;
+        width: 2px; background: #ecf0f1;
+    }
+    .order-timeline li { position: relative; padding-bottom: 1.1rem; }
+    .order-timeline li::before {
+        content: ''; position: absolute; left: -1.45rem; top: 0.35rem;
+        width: 0.85rem; height: 0.85rem; border-radius: 50%;
+        background: #fff; border: 2px solid var(--green);
+    }
+
+    @media (max-width: 900px) { .order-cols { grid-template-columns: 1fr; } }
+</style>
+
+<div class="order-cols">
+    <!-- ============ LEFT: ITEMS + ACTIONS ============ -->
+    <div>
+        <div class="panel" style="margin-bottom: 1.5rem;">
+            <h2 style="font-size: 1.1rem; color: var(--dark); margin-bottom: 1rem;">Items</h2>
+            <div class="table-container" style="box-shadow: none;">
+                <table>
+                    <thead>
+                        <tr><th>Product</th><th>Pack</th><th>SKU</th><th>Price</th><th>Qty</th><th>Total</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.items.all %}
+                            <tr>
+                                <td data-label="Product"><strong>{{ item.product_name }}</strong></td>
+                                <td data-label="Pack">{{ item.variant_label }}</td>
+                                <td data-label="SKU" style="font-family: Consolas, monospace; font-size: 0.85rem;">{{ item.sku }}</td>
+                                <td data-label="Price">₹{{ item.unit_price }}</td>
+                                <td data-label="Qty">{{ item.quantity }}</td>
+                                <td data-label="Total"><strong>₹{{ item.line_total }}</strong></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top: 1rem; max-width: 320px; margin-left: auto;">
+                <div style="display:flex; justify-content:space-between; padding:0.3rem 0;">
+                    <span>Subtotal</span><span>₹{{ order.subtotal }}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:0.3rem 0;">
+                    <span>Delivery</span><span>₹{{ order.shipping_fee }}</span>
+                </div>
+                {% if order.discount %}
+                    <div style="display:flex; justify-content:space-between; padding:0.3rem 0; color:var(--green);">
+                        <span>Discount</span><span>− ₹{{ order.discount }}</span>
+                    </div>
+                {% endif %}
+                <div style="display:flex; justify-content:space-between; padding:0.6rem 0; border-top:2px solid #ecf0f1; font-weight:bold; font-size:1.15rem;">
+                    <span>Total</span><span>₹{{ order.total }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ UPDATE STATUS ============ -->
+        <div class="panel" style="margin-bottom: 1.5rem;">
+            <h2 style="font-size: 1.1rem; color: var(--dark); margin-bottom: 1rem;">Update status</h2>
+            <p style="color: #7f8c8d; font-size: 0.9rem; margin-bottom: 1rem;">
+                Each change is logged on the customer's tracking page. Marking an order
+                <strong>Delivered</strong> also marks a COD order as paid; marking it
+                <strong>Cancelled</strong> puts the stock back.
+            </p>
+
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="status">
+
+                <div class="form-group">
+                    <label for="status">New status</label>
+                    <select id="status" name="status" required>
+                        {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if order.status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="note">Note for the customer</label>
+                    <input type="text" id="note" name="note" maxlength="250"
+                           placeholder="e.g. Handed over to Professional Couriers">
+                </div>
+
+                <div class="form-group">
+                    <label for="location">Current location</label>
+                    <input type="text" id="location" name="location" maxlength="120" placeholder="Optional">
+                </div>
+
+                <button type="submit" class="btn">Save status</button>
+            </form>
+        </div>
+
+        <!-- ============ SHIPMENT ============ -->
+        <div class="panel" style="margin-bottom: 1.5rem;">
+            <h2 style="font-size: 1.1rem; color: var(--dark); margin-bottom: 1rem;">Shipment tracking</h2>
+
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="shipment">
+
+                <div class="form-group">
+                    <label for="courier_name">Courier</label>
+                    <input type="text" id="courier_name" name="courier_name"
+                           value="{{ order.courier_name }}" placeholder="e.g. DTDC, India Post">
+                </div>
+
+                <div class="form-group">
+                    <label for="tracking_number">Tracking number</label>
+                    <input type="text" id="tracking_number" name="tracking_number" value="{{ order.tracking_number }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="tracking_url">Courier tracking link</label>
+                    <input type="text" id="tracking_url" name="tracking_url" value="{{ order.tracking_url }}"
+                           placeholder="https://…">
+                </div>
+
+                <div class="form-group">
+                    <label for="expected_delivery">Expected delivery</label>
+                    <input type="date" id="expected_delivery" name="expected_delivery"
+                           value="{{ order.expected_delivery|date:'Y-m-d' }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="internal_notes">Internal notes (never shown to the customer)</label>
+                    <textarea id="internal_notes" name="internal_notes" rows="3">{{ order.internal_notes }}</textarea>
+                </div>
+
+                <button type="submit" class="btn">Save shipment details</button>
+            </form>
+        </div>
+
+        <!-- ============ TIMELINE ============ -->
+        <div class="panel">
+            <h2 style="font-size: 1.1rem; color: var(--dark); margin-bottom: 1rem;">Tracking history</h2>
+            {% if order.events.all %}
+                <ul class="order-timeline">
+                    {% for event in order.events.all %}
+                        <li>
+                            <strong>{{ event.icon }} {{ event.get_status_display }}</strong>
+                            <div style="font-size: 0.85rem; color: #7f8c8d;">
+                                {{ event.created_at|date:"d M Y, g:i a" }}
+                                {% if event.created_by %} · by {{ event.created_by.username }}{% endif %}
+                                {% if event.location %} · {{ event.location }}{% endif %}
+                            </div>
+                            {% if event.note %}<div style="font-size: 0.9rem;">{{ event.note }}</div>{% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p style="color: #7f8c8d;">No events logged yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ============ RIGHT: CUSTOMER + PAYMENT ============ -->
+    <div>
+        <div class="panel" style="margin-bottom: 1.5rem;">
+            <h2 style="font-size: 1.1rem; color: var(--dark); margin-bottom: 1rem;">Deliver to</h2>
+            <p style="line-height: 1.8;">
+                <strong>{{ order.full_name }}</strong><br>
+                {{ order.address_line1 }}<br>
+                {% if order.address_line2 %}{{ order.address_line2 }}<br>{% endif %}
+                {% if order.landmark %}Near {{ order.landmark }}<br>{% endif %}
+                {{ order.city }}{% if order.district %}, {{ order.district }}{% endif %}<br>
+                {{ order.state }} - <strong>{{ order.pincode }}</strong>
+            </p>
+            <p style="margin-top: 0.75rem;">
+                📞 <a href="tel:{{ order.phone }}">{{ order.phone }}</a>
+                {% if order.alt_phone %} / <a href="tel:{{ order.alt_phone }}">{{ order.alt_phone }}</a>{% endif %}
+                {% if order.email %}<br>✉ <a href="mailto:{{ order.email }}">{{ order.email }}</a>{% endif %}
+            </p>
+            {% if order.delivery_notes %}
+                <div class="alert" style="background:#fff3cd; color:#856404; border:1px solid #ffeeba; margin-top:1rem;">
+                    📝 {{ order.delivery_notes }}
+                </div>
+            {% endif %}
+            {% if order.is_cancelled and order.cancelled_reason %}
+                <div class="alert alert-error" style="margin-top: 1rem;">
+                    ❌ Cancelled: {{ order.cancelled_reason }}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- ============ PAYMENT ============ -->
+        <div class="panel">
+            <h2 style="font-size: 1.1rem; color: var(--dark); margin-bottom: 1rem;">Payment</h2>
+
+            {% for payment in order.payments.all %}
+                <div style="border:1px solid #ecf0f1; border-radius:8px; padding:1rem; margin-bottom:1rem;">
+                    <div style="display:flex; justify-content:space-between; gap:0.5rem; flex-wrap:wrap;">
+                        <strong>₹{{ payment.amount }}</strong>
+                        <span style="font-size:0.85rem; color:#7f8c8d;">{{ payment.get_status_display }}</span>
+                    </div>
+                    <div style="font-size: 0.88rem; margin-top: 0.5rem;">
+                        {% if payment.reference %}
+                            UTR: <span style="font-family: Consolas, monospace;">{{ payment.reference }}</span><br>
+                        {% endif %}
+                        {% if payment.payer_upi %}From: {{ payment.payer_upi }}<br>{% endif %}
+                        <span style="color:#7f8c8d;">{{ payment.created_at|date:"d M Y, g:i a" }}</span>
+                    </div>
+
+                    {% if payment.screenshot %}
+                        <a href="{{ payment.screenshot.url }}" target="_blank" rel="noopener">
+                            <img src="{{ payment.screenshot.url }}" alt="Payment screenshot" class="image-preview">
+                        </a>
+                    {% endif %}
+
+                    {% if payment.status == 'submitted' %}
+                        <div class="action-buttons" style="margin-top: 0.75rem;">
+                            <form method="post" onsubmit="return confirm('Confirm this payment as received?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="verify_payment">
+                                <input type="hidden" name="payment_id" value="{{ payment.pk }}">
+                                <button type="submit" class="btn btn-success btn-small">✔ Verify</button>
+                            </form>
+                            <form method="post" onsubmit="return confirm('Reject this payment?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="reject_payment">
+                                <input type="hidden" name="payment_id" value="{{ payment.pk }}">
+                                <button type="submit" class="btn btn-danger btn-small">✖ Reject</button>
+                            </form>
+                        </div>
+                    {% endif %}
+
+                    {% if payment.note %}
+                        <div style="font-size:0.85rem; color:#c0392b; margin-top:0.5rem;">{{ payment.note }}</div>
+                    {% endif %}
+                </div>
+            {% empty %}
+                <p style="color: #7f8c8d; margin-bottom: 1rem;">
+                    No payment attempts recorded (Cash on Delivery orders have none until delivery).
+                </p>
+            {% endfor %}
+
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="payment">
+
+                <div class="form-group">
+                    <label for="payment_status">Payment status</label>
+                    <select id="payment_status" name="payment_status">
+                        {% for value, label in payment_choices %}
+                            <option value="{{ value }}" {% if order.payment_status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="payment_reference">Reference / UTR</label>
+                    <input type="text" id="payment_reference" name="payment_reference"
+                           value="{{ order.payment_reference }}">
+                </div>
+
+                <button type="submit" class="btn">Save payment</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

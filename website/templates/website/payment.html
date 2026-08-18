@@ -1,0 +1,98 @@
+{% extends 'website/base.html' %}
+{% load avee_extras %}
+
+{% block title %}Pay for order {{ order.order_number }} - Avee Foods{% endblock %}
+
+{% block content %}
+<div class="container container-narrow">
+    <h1 class="page-title">Pay ₹{{ order.total|inr }}</h1>
+    <p class="section-lead">
+        Order <strong>{{ order.order_number }}</strong> is reserved for you. Complete the UPI
+        payment below and enter the transaction number so we can confirm it.
+    </p>
+
+    <div class="detail-section" style="margin-bottom:1.5rem;">
+        <h2 class="section-title" style="font-size:1.15rem;">Step 1 — Pay by UPI</h2>
+
+        <a href="{{ upi_uri }}" class="btn btn-block" style="margin-bottom:1rem;">
+            📲 Open GPay / PhonePe / Paytm
+        </a>
+        <p style="font-size:0.85rem; color:var(--muted); margin-bottom:1.25rem;">
+            The button works on a phone. On a laptop, pay manually to the UPI ID below.
+        </p>
+
+        <div class="form-field" style="margin-bottom:1rem;">
+            <label>Pay to this UPI ID</label>
+            <div class="copy-field">
+                <span>{{ upi_id }}</span>
+                <button type="button" class="btn btn-small btn-outline" data-copy="{{ upi_id }}">Copy</button>
+            </div>
+        </div>
+
+        <div class="form-field" style="margin-bottom:1rem;">
+            <label>Exact amount</label>
+            <div class="copy-field">
+                <span>₹{{ order.total }}</span>
+                <button type="button" class="btn btn-small btn-outline" data-copy="{{ order.total }}">Copy</button>
+            </div>
+        </div>
+
+        <div class="form-field">
+            <label>Add this as the payment note</label>
+            <div class="copy-field">
+                <span>{{ order.order_number }}</span>
+                <button type="button" class="btn btn-small btn-outline" data-copy="{{ order.order_number }}">Copy</button>
+            </div>
+        </div>
+
+        <div class="alert alert-warning" style="margin-top:1.25rem;">
+            ⚠ Pay the <strong>exact amount</strong> to the UPI ID above only. We never ask for
+            an OTP, PIN or a "refund" payment over the phone.
+        </div>
+    </div>
+
+    <div class="detail-section">
+        <h2 class="section-title" style="font-size:1.15rem;">Step 2 — Tell us about the payment</h2>
+
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+
+            <div class="form-grid">
+                <div class="form-field full">
+                    <label for="reference" class="required">UPI transaction / UTR number</label>
+                    <input type="text" id="reference" name="reference" class="field-input"
+                           value="{{ data.reference|default:'' }}" placeholder="e.g. 412345678901" required>
+                    {% if errors.reference %}<span class="field-error">{{ errors.reference }}</span>{% endif %}
+                    <span style="font-size:0.8rem; color:var(--muted);">
+                        Find it in your UPI app under the transaction details (UTR / Transaction ID).
+                    </span>
+                </div>
+                <div class="form-field">
+                    <label for="payer_upi">UPI ID you paid from</label>
+                    <input type="text" id="payer_upi" name="payer_upi" class="field-input"
+                           value="{{ data.payer_upi|default:'' }}" placeholder="yourname@upi">
+                </div>
+                <div class="form-field">
+                    <label for="screenshot">Payment screenshot (optional)</label>
+                    <input type="file" id="screenshot" name="screenshot" accept="image/*">
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-block" style="margin-top:1.5rem;">
+                I've paid — submit for verification
+            </button>
+        </form>
+
+        <p class="summary-note">
+            Payment trouble? Call us on <a href="tel:{{ store.support_phone }}">{{ store.support_phone }}</a>
+            with your order number.
+        </p>
+    </div>
+
+    <div class="btn-row" style="margin-top:1.5rem;">
+        <a href="{% url 'website:order_detail' order.order_number %}" class="btn btn-outline">
+            View order details
+        </a>
+    </div>
+</div>
+{% endblock %}

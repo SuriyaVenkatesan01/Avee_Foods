@@ -1,0 +1,138 @@
+{% comment %}
+Home page banner shown directly under the header.
+
+Context:
+  banners -- active HomeBanner rows, in display order (renders nothing if empty)
+
+One item shows on its own. Several become a slideshow: photos hold for their
+own duration, videos hold until the clip finishes.
+{% endcomment %}
+{% if banners %}
+<section class="banner" id="home-banner" data-count="{{ banners|length }}"
+         aria-label="Featured photos and videos" aria-roledescription="carousel">
+    {% for banner in banners %}
+        <div class="banner-slide {% if forloop.first %}is-current{% endif %}"
+             data-type="{{ banner.media_type }}"
+             data-duration="{{ banner.duration_seconds }}"
+             aria-hidden="{% if forloop.first %}false{% else %}true{% endif %}"
+             aria-roledescription="slide"
+             aria-label="{{ forloop.counter }} of {{ banners|length }}">
+
+            {% if banner.is_video %}
+                {# muted + playsinline are what browsers require to autoplay #}
+                <video muted playsinline preload="metadata"
+                       {% if banners|length == 1 %}loop autoplay{% endif %}>
+                    <source src="{{ banner.file.url }}" type="{{ banner.mime_type }}">
+                </video>
+            {% else %}
+                <img src="{{ banner.file.url }}" alt="{{ banner.title|default:'Avee Foods' }}"
+                     {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
+            {% endif %}
+
+            {% if banner.has_overlay %}
+                <div class="banner-overlay">
+                    {% if banner.title %}<h2>{{ banner.title }}</h2>{% endif %}
+                    {% if banner.subtitle %}<p>{{ banner.subtitle }}</p>{% endif %}
+                    {% if banner.button_text and banner.button_url %}
+                        <a href="{{ banner.button_url }}" class="btn">{{ banner.button_text }}</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    {% endfor %}
+
+    <button class="banner-nav prev" type="button" aria-label="Previous slide">&#10094;</button>
+    <button class="banner-nav next" type="button" aria-label="Next slide">&#10095;</button>
+
+    <div class="banner-dots">
+        {% for banner in banners %}
+            <button class="banner-dot {% if forloop.first %}is-current{% endif %}" type="button"
+                    data-index="{{ forloop.counter0 }}" aria-label="Go to slide {{ forloop.counter }}"></button>
+        {% endfor %}
+    </div>
+</section>
+
+<script>
+(function () {
+    var banner = document.getElementById('home-banner');
+    if (!banner) return;
+
+    var slides = Array.prototype.slice.call(banner.querySelectorAll('.banner-slide'));
+    var dots = Array.prototype.slice.call(banner.querySelectorAll('.banner-dot'));
+    if (slides.length < 2) {
+        // Single video still needs a nudge on browsers that ignore `autoplay`
+        var only = slides[0] && slides[0].querySelector('video');
+        if (only) { var p = only.play(); if (p) p.catch(function () {}); }
+        return;
+    }
+
+    var index = 0;
+    var timer = null;
+    var stopped = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function clearTimer() {
+        if (timer) { clearTimeout(timer); timer = null; }
+    }
+
+    function show(next) {
+        clearTimer();
+
+        slides[index].classList.remove('is-current');
+        slides[index].setAttribute('aria-hidden', 'true');
+        dots[index].classList.remove('is-current');
+
+        var previousVideo = slides[index].querySelector('video');
+        if (previousVideo) previousVideo.pause();
+
+        index = (next + slides.length) % slides.length;
+
+        slides[index].classList.add('is-current');
+        slides[index].setAttribute('aria-hidden', 'false');
+        dots[index].classList.add('is-current');
+
+        schedule();
+    }
+
+    function schedule() {
+        var slide = slides[index];
+        var video = slide.querySelector('video');
+
+        if (video) {
+            // A video holds the slide until it has finished playing
+            video.currentTime = 0;
+            var playing = video.play();
+            if (playing) playing.catch(function () {
+                // Autoplay refused (rare with muted): fall back to a timed slide
+                if (!stopped) timer = setTimeout(next, 5000);
+            });
+            return;
+        }
+
+        if (stopped) return;
+        var seconds = parseInt(slide.dataset.duration, 10) || 5;
+        timer = setTimeout(next, seconds * 1000);
+    }
+
+    function next() { show(index + 1); }
+    function previous() { show(index - 1); }
+
+    slides.forEach(function (slide) {
+        var video = slide.querySelector('video');
+        if (video) video.addEventListener('ended', next);
+    });
+
+    banner.querySelector('.banner-nav.next').addEventListener('click', next);
+    banner.querySelector('.banner-nav.prev').addEventListener('click', previous);
+    dots.forEach(function (dot) {
+        dot.addEventListener('click', function () { show(parseInt(dot.dataset.index, 10)); });
+    });
+
+    // Don't burn CPU or skip slides while the tab is in the background
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) { clearTimer(); } else { schedule(); }
+    });
+
+    schedule();
+})();
+</script>
+{% endif %}

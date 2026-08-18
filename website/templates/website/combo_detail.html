@@ -1,0 +1,75 @@
+{% extends 'website/base.html' %}
+{% load avee_extras %}
+
+{% block title %}{{ combo.name }} - Avee Foods{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="detail-section">
+        <div class="detail-grid">
+            <div>
+                {% if combo.image %}
+                    <img src="{{ combo.image.url }}" alt="{{ combo.name }}" class="detail-image">
+                {% else %}
+                    <div class="product-image detail-image-placeholder">No Image</div>
+                {% endif %}
+                {% if combo.discount_percent %}
+                    <div style="background-color:var(--green); color:white; padding:1rem; border-radius:8px; text-align:center; font-size:1.15rem; font-weight:bold;">
+                        Save {{ combo.discount_percent }}% with this combo
+                    </div>
+                {% endif %}
+            </div>
+
+            <div>
+                <h1 class="page-title" style="margin-top:0;">{{ combo.name }}</h1>
+                <div class="product-price" style="font-size:2rem;">₹{{ combo.price|inr }}</div>
+
+                <div style="margin-bottom:2rem; line-height:1.8;">
+                    <h3 class="section-title" style="font-size:1.1rem;">Description</h3>
+                    <p style="color:#5f6b73;">{{ combo.description|linebreaksbr }}</p>
+                </div>
+
+                {% if combo_products %}
+                    <div class="info-panel" style="margin-bottom:2rem;">
+                        <h3 style="margin-bottom:1rem;">📦 What's inside</h3>
+                        <table class="spec-table">
+                            <tbody>
+                                {% for product in combo_products %}
+                                    <tr>
+                                        <th scope="row">
+                                            <a href="{{ product.get_absolute_url }}">{{ product.name }}</a>
+                                            {% with variant=product.default_variant %}
+                                                {% if variant %}
+                                                    <br><span style="font-weight:normal; font-size:0.85rem;">{{ variant.label }}</span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </th>
+                                        <td style="text-align:right;">₹{{ product.display_price|inr }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+
+                <div class="btn-row">
+                    {% if combo_products %}
+                        <form method="post" action="{% url 'website:combo_add_to_cart' combo.pk %}" style="flex:1 1 220px;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-block">🛒 Add combo to cart</button>
+                        </form>
+                    {% endif %}
+                    <a href="{% url 'website:combos' %}" class="btn btn-secondary">Back to Combos</a>
+                </div>
+
+                {% if combo_products %}
+                    <p class="summary-note">
+                        Adds the smallest available pack of each product. You can change the
+                        quantities and pack sizes in your cart.
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Logout - Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">👋 Logout</h1>
+</div>
+
+<div class="form-container" style="max-width: 500px;">
+    <div style="padding: 2rem; text-align: center;">
+        <p style="font-size: 1.1rem; color: var(--dark); margin-bottom: 1.5rem;">
+            Are you sure you want to log out?
+        </p>
+        
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-buttons" style="justify-content: center;">
+                <button type="submit" class="btn btn-danger">Yes, Log Out</button>
+                <a href="{% url 'dashboard:home' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

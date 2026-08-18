@@ -1,0 +1,185 @@
+{% extends 'website/base.html' %}
+{% load avee_extras %}
+
+{% block title %}Checkout - Avee Foods{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="page-title">Checkout</h1>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="shop-grid">
+            <!-- ============ CUSTOMER + ADDRESS ============ -->
+            <div class="detail-section">
+                <h2 class="section-title" style="font-size:1.2rem;">1. Who is receiving this order?</h2>
+                <div class="form-grid" style="margin-bottom:2rem;">
+                    <div class="form-field">
+                        <label for="full_name" class="required">Full name</label>
+                        <input type="text" id="full_name" name="full_name" class="field-input"
+                               value="{{ data.full_name|default:'' }}"
+                               placeholder="Full name as on the address" required>
+                        {% if errors.full_name %}<span class="field-error">{{ errors.full_name }}</span>{% endif %}
+                    </div>
+
+                    <div class="form-field">
+                        <label for="phone" class="required">Mobile number</label>
+                        <input type="tel" id="phone" name="phone" class="field-input"
+                               value="{{ data.phone|default:'' }}" inputmode="numeric" maxlength="10"
+                               placeholder="10 digit mobile number" required>
+                        {% if errors.phone %}<span class="field-error">{{ errors.phone }}</span>{% endif %}
+                        <span style="font-size:0.8rem; color:var(--muted);">
+                            Used for delivery updates and order tracking.
+                        </span>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="alt_phone">Alternate number</label>
+                        <input type="tel" id="alt_phone" name="alt_phone" class="field-input"
+                               value="{{ data.alt_phone|default:'' }}" inputmode="numeric" maxlength="10"
+                               placeholder="Alternate number (optional)">
+                        {% if errors.alt_phone %}<span class="field-error">{{ errors.alt_phone }}</span>{% endif %}
+                    </div>
+
+                    <div class="form-field">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" class="field-input"
+                               value="{{ data.email|default:'' }}"
+                               placeholder="For the order confirmation (optional)">
+                        {% if errors.email %}<span class="field-error">{{ errors.email }}</span>{% endif %}
+                    </div>
+                </div>
+
+                <h2 class="section-title" style="font-size:1.2rem;">2. Delivery address</h2>
+                <div class="form-grid" style="margin-bottom:2rem;">
+                    <div class="form-field full">
+                        <label for="address_line1" class="required">House / flat no., street</label>
+                        <input type="text" id="address_line1" name="address_line1" class="field-input"
+                               value="{{ data.address_line1|default:'' }}"
+                               placeholder="House / flat no., street name" required>
+                        {% if errors.address_line1 %}<span class="field-error">{{ errors.address_line1 }}</span>{% endif %}
+                    </div>
+
+                    <div class="form-field full">
+                        <label for="address_line2">Area / locality</label>
+                        <input type="text" id="address_line2" name="address_line2" class="field-input"
+                               value="{{ data.address_line2|default:'' }}"
+                               placeholder="Area, locality (optional)">
+                    </div>
+
+                    <div class="form-field">
+                        <label for="landmark">Landmark</label>
+                        <input type="text" id="landmark" name="landmark" class="field-input"
+                               value="{{ data.landmark|default:'' }}"
+                               placeholder="Near which landmark? (optional)">
+                    </div>
+
+                    <div class="form-field">
+                        <label for="city" class="required">City / town / village</label>
+                        <input type="text" id="city" name="city" class="field-input"
+                               value="{{ data.city|default:'' }}" placeholder="City / town / village" required>
+                        {% if errors.city %}<span class="field-error">{{ errors.city }}</span>{% endif %}
+                    </div>
+
+                    <div class="form-field">
+                        <label for="district">District</label>
+                        <input type="text" id="district" name="district" class="field-input"
+                               value="{{ data.district|default:'' }}" placeholder="District">
+                    </div>
+
+                    <div class="form-field">
+                        <label for="state" class="required">State</label>
+                        <select id="state" name="state" required>
+                            {% for state in states %}
+                                <option value="{{ state }}" {% if data.state == state %}selected{% endif %}>
+                                    {{ state }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        {% if errors.state %}<span class="field-error">{{ errors.state }}</span>{% endif %}
+                    </div>
+
+                    <div class="form-field">
+                        <label for="pincode" class="required">PIN code</label>
+                        <input type="text" id="pincode" name="pincode" class="field-input"
+                               value="{{ data.pincode|default:'' }}" inputmode="numeric" maxlength="6"
+                               placeholder="6 digit PIN code" required>
+                        {% if errors.pincode %}<span class="field-error">{{ errors.pincode }}</span>{% endif %}
+                    </div>
+
+                    <div class="form-field full">
+                        <label for="delivery_notes">Delivery instructions</label>
+                        <textarea id="delivery_notes" name="delivery_notes" rows="2"
+                                  placeholder="Delivery instructions (optional)">{{ data.delivery_notes|default:'' }}</textarea>
+                    </div>
+                </div>
+
+                <h2 class="section-title" style="font-size:1.2rem;">3. Payment method</h2>
+                {% if errors.payment_method %}
+                    <div class="alert alert-error">{{ errors.payment_method }}</div>
+                {% endif %}
+
+                {% for method in payment_methods %}
+                    <label class="pay-option">
+                        <input type="radio" name="payment_method" value="{{ method.value }}"
+                               {% if data.payment_method == method.value %}checked{% endif %} required>
+                        <span>
+                            <strong>{{ method.label }}</strong>
+                            <span style="display:block; font-size:0.88rem; color:var(--muted);">
+                                {{ method.hint }}
+                            </span>
+                        </span>
+                    </label>
+                {% endfor %}
+            </div>
+
+            <!-- ============ ORDER SUMMARY ============ -->
+            <aside class="summary-card">
+                <h2 class="section-title" style="font-size:1.2rem;">Your order</h2>
+
+                <table class="order-table" style="margin-bottom:0.75rem;">
+                    <tbody>
+                        {% for item in cart_obj.line_items %}
+                            <tr>
+                                <td>
+                                    <strong>{{ item.variant.product.name }}</strong><br>
+                                    <span style="font-size:0.85rem; color:var(--muted);">
+                                        {{ item.variant.label }} × {{ item.quantity }}
+                                    </span>
+                                </td>
+                                <td class="num">₹{{ item.line_total|inr }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span>₹{{ cart_obj.subtotal|inr }}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Delivery</span>
+                    <span>
+                        {% if cart_obj.shipping_fee %}₹{{ cart_obj.shipping_fee|inr }}
+                        {% else %}<strong style="color:var(--green);">FREE</strong>{% endif %}
+                    </span>
+                </div>
+                <div class="summary-row total">
+                    <span>To pay</span>
+                    <span>₹{{ cart_obj.total|inr }}</span>
+                </div>
+
+                <button type="submit" class="btn btn-block" style="margin-top:1rem;">Place Order</button>
+
+                <p class="summary-note">
+                    By placing this order you agree to be contacted on the mobile number above
+                    for delivery updates.
+                </p>
+                <a href="{% url 'website:cart_detail' %}" class="btn btn-outline btn-block btn-small" style="margin-top:0.5rem;">
+                    ← Back to cart
+                </a>
+            </aside>
+        </div>
+    </form>
+</div>
+{% endblock %}
