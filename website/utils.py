@@ -1,6 +1,8 @@
 """Small helpers shared by the checkout and payment views."""
 
+import re
 from decimal import Decimal
+from io import BytesIO
 from urllib.parse import quote
 
 from django.conf import settings
@@ -23,6 +25,35 @@ def upi_payment_uri(order):
     }
     query = '&'.join(f'{k}={quote(str(v))}' for k, v in params.items())
     return f'upi://pay?{query}'
+
+
+def upi_qr_svg(uri):
+    """Render `uri` as an inline SVG QR code the customer can scan.
+
+    Returns an empty string when the optional `qrcode` package is missing so a
+    fresh deployment shows the UPI ID and the deep link instead of erroring.
+    """
+    try:
+        import qrcode
+        import qrcode.image.svg
+    except ImportError:
+        return ''
+
+    img = qrcode.make(
+        uri,
+        image_factory=qrcode.image.svg.SvgPathImage,
+        box_size=10,
+        border=2,
+    )
+    buffer = BytesIO()
+    img.save(buffer)
+    svg = buffer.getvalue().decode('utf-8')
+
+    # Drop the XML prolog (invalid inside HTML) and the fixed mm size so the
+    # QR scales to whatever box the payment page gives it.
+    svg = svg.split('?>', 1)[-1].strip()
+    return re.sub(r'(width|height)="[\d.]+mm"',
+                  lambda m: m.group(1) + '="100%"', svg, count=2)
 
 
 def build_order_from_cart(order, cart):

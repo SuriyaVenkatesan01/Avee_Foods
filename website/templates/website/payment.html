@@ -8,17 +8,26 @@
     <h1 class="page-title">Pay ₹{{ order.total|inr }}</h1>
     <p class="section-lead">
         Order <strong>{{ order.order_number }}</strong> is reserved for you. Complete the UPI
-        payment below and enter the transaction number so we can confirm it.
+        payment below and we will confirm your order once the payment is verified.
     </p>
 
-    <div class="detail-section" style="margin-bottom:1.5rem;">
-        <h2 class="section-title" style="font-size:1.15rem;">Step 1 — Pay by UPI</h2>
+    <div class="detail-section">
+        <h2 class="section-title" style="font-size:1.15rem;">Pay by UPI</h2>
+
+        {% if upi_qr %}
+        <div class="upi-qr-card">
+            <p class="upi-qr-name">{{ upi_payee }}</p>
+            <div class="upi-qr">{{ upi_qr|safe }}</div>
+            <p class="upi-qr-id">UPI ID: {{ upi_id }}</p>
+            <p class="upi-qr-hint">Scan to pay with any UPI app</p>
+        </div>
+        {% endif %}
 
         <a href="{{ upi_uri }}" class="btn btn-block" style="margin-bottom:1rem;">
             📲 Open GPay / PhonePe / Paytm
         </a>
         <p style="font-size:0.85rem; color:var(--muted); margin-bottom:1.25rem;">
-            The button works on a phone. On a laptop, pay manually to the UPI ID below.
+            The button works on a phone. On a laptop, scan the QR above or pay manually to the UPI ID below.
         </p>
 
         <div class="form-field" style="margin-bottom:1rem;">
@@ -49,39 +58,6 @@
             ⚠ Pay the <strong>exact amount</strong> to the UPI ID above only. We never ask for
             an OTP, PIN or a "refund" payment over the phone.
         </div>
-    </div>
-
-    <div class="detail-section">
-        <h2 class="section-title" style="font-size:1.15rem;">Step 2 — Tell us about the payment</h2>
-
-        <form method="post" enctype="multipart/form-data" novalidate>
-            {% csrf_token %}
-
-            <div class="form-grid">
-                <div class="form-field full">
-                    <label for="reference" class="required">UPI transaction / UTR number</label>
-                    <input type="text" id="reference" name="reference" class="field-input"
-                           value="{{ data.reference|default:'' }}" placeholder="e.g. 412345678901" required>
-                    {% if errors.reference %}<span class="field-error">{{ errors.reference }}</span>{% endif %}
-                    <span style="font-size:0.8rem; color:var(--muted);">
-                        Find it in your UPI app under the transaction details (UTR / Transaction ID).
-                    </span>
-                </div>
-                <div class="form-field">
-                    <label for="payer_upi">UPI ID you paid from</label>
-                    <input type="text" id="payer_upi" name="payer_upi" class="field-input"
-                           value="{{ data.payer_upi|default:'' }}" placeholder="yourname@upi">
-                </div>
-                <div class="form-field">
-                    <label for="screenshot">Payment screenshot (optional)</label>
-                    <input type="file" id="screenshot" name="screenshot" accept="image/*">
-                </div>
-            </div>
-
-            <button type="submit" class="btn btn-block" style="margin-top:1.5rem;">
-                I've paid — submit for verification
-            </button>
-        </form>
 
         <p class="summary-note">
             Payment trouble? Call us on <a href="tel:{{ store.support_phone }}">{{ store.support_phone }}</a>

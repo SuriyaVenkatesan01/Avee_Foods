@@ -154,8 +154,8 @@ STORE = {
     "cod_available": True,
     "cod_max_order_value": Decimal("10000.00"),
     # UPI collect details. `upi_id` must be the VPA money should land in.
-    "upi_id": "aveefoods@ybl",
-    "upi_payee": "Avee Foods",
+    "upi_id": "suriya16696@oksbi",
+    "upi_payee": "Suriya Venkatesan",
     "upi_enabled": True,
     "support_phone": "+91 70105 46105",
     "whatsapp": "917010546105",

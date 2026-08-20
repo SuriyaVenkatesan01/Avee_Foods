@@ -16,7 +16,7 @@ from .models import (
 )
 from .utils import (
     build_order_from_cart, owns_order, reduce_stock, remember_order,
-    restore_stock, upi_payment_uri,
+    restore_stock, upi_payment_uri, upi_qr_svg,
 )
 
 INDIAN_STATES = [
@@ -522,12 +522,15 @@ def payment(request, order_number):
 
         messages.error(request, 'Please check the transaction details.')
 
+    upi_uri = upi_payment_uri(order)
     return render(request, 'website/payment.html', {
         'order': order,
         'data': data,
         'errors': errors,
-        'upi_uri': upi_payment_uri(order),
+        'upi_uri': upi_uri,
+        'upi_qr': upi_qr_svg(upi_uri),
         'upi_id': settings.STORE['upi_id'],
+        'upi_payee': settings.STORE['upi_payee'],
     })
 
 
