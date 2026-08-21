@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from decimal import Decimal
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -26,7 +27,15 @@ SECRET_KEY = "django-insecure-*q=mhbtmxdt34^0pp38w@@fc+y1g_1el1!255!ktl%&e(*lc%$
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "avee-foods.onrender.com",
+    "localhost",
+    "127.0.0.1",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://avee-foods.onrender.com",
+]
 
 
 # Application definition
@@ -170,3 +179,6 @@ STORE = {
     "gst_number": "33ABCDE1234F1Z5",
     "fssai_number": "22426354000527",
 }
+
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'avee_foods.settings')
