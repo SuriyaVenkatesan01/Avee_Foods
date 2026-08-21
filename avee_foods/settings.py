@@ -30,12 +30,17 @@ SECRET_KEY = "django-insecure-*q=mhbtmxdt34^0pp38w@@fc+y1g_1el1!255!ktl%&e(*lc%$
 DEBUG = True
 
 ALLOWED_HOSTS = [
+    "aveefoods.in",
+    "www.aveefoods.in",
     "avee-foods.onrender.com",
     "localhost",
     "127.0.0.1",
 ]
 
+# Render terminates TLS, so POST forms need the https origins trusted
 CSRF_TRUSTED_ORIGINS = [
+    "https://aveefoods.in",
+    "https://www.aveefoods.in",
     "https://avee-foods.onrender.com",
 ]
 
