@@ -193,3 +193,6 @@ api/management/data/payments (4) copy.csv
 # Logs
 logs/
 /lambda_functions
+
+# Django collected static (built on deploy)
+staticfiles/
