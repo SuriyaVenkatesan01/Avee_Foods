@@ -91,21 +91,37 @@
             </div>
 
             <!-- ============ BUY BOX ============ -->
-            <div>
+            <div class="pdp-buy">
                 {% if product.category %}
-                    <div class="card-category">
-                        <a href="{{ product.category.get_absolute_url }}" style="color:inherit;">{{ product.category.label }}</a>
+                    <div class="pdp-eyebrow">
+                        <a href="{% url 'website:food_products' %}?category={{ product.category.slug }}">{{ product.category.label }}</a>
                     </div>
                 {% endif %}
 
-                <h1 class="page-title" style="margin:0.25rem 0 0.5rem;">{{ product.name }}</h1>
+                <h1 class="pdp-title">{{ product.name }}</h1>
 
                 {% if product.short_description %}
-                    <p style="color:#5f6b73; margin-bottom:1rem;">{{ product.short_description }}</p>
+                    <p class="pdp-lead">{{ product.short_description }}</p>
+                {% endif %}
+
+                {# Headline price for the pack currently selected -- the JS at the
+                   foot of this page keeps it in step with the radio buttons. #}
+                {% if selected_variant %}
+                    <div class="pdp-price">
+                        <span class="pdp-price-now" data-pdp-price>₹{{ selected_variant.price|inr }}</span>
+                        <span class="pdp-price-was" data-pdp-mrp>{% if selected_variant.discount_percent %}₹{{ selected_variant.mrp|inr }}{% endif %}</span>
+                        <span class="pdp-price-save" data-pdp-save
+                              {% if not selected_variant.discount_percent %}hidden{% endif %}>{% if selected_variant.discount_percent %}Save ₹{{ selected_variant.savings|inr }} ({{ selected_variant.discount_percent }}% off){% endif %}</span>
+                    </div>
+                    <div class="pdp-price-meta">
+                        <span data-pdp-pack>{{ selected_variant.label }} pack</span>
+                        <span data-pdp-rate>{% if selected_variant.unit_rate %}· ₹{{ selected_variant.unit_rate|inr }}{{ selected_variant.unit_rate_label }}{% endif %}</span>
+                        <span class="pdp-tax">Inclusive of all taxes</span>
+                    </div>
                 {% endif %}
 
                 {% if product.certifications %}
-                    <div class="tag-row" style="margin-bottom:1.25rem;">
+                    <div class="tag-row pdp-certs">
                         {% for cert in product.certifications %}
                             <span class="tag">✔ {{ cert }}</span>
                         {% endfor %}
@@ -117,14 +133,17 @@
                         {% csrf_token %}
                         <input type="hidden" name="next" value="{{ request.get_full_path }}">
 
-                        <h3 class="section-title" style="font-size:1.05rem; margin-bottom:0.6rem;">
-                            Choose your pack size
-                        </h3>
+                        <h2 class="pdp-section-heading">Choose your pack size</h2>
 
                         <div class="variant-list">
                             {% for variant in variants %}
                                 <label class="variant-option {% if not variant.in_stock %}disabled{% endif %}">
                                     <input type="radio" name="variant" value="{{ variant.pk }}"
+                                           data-price="₹{{ variant.price|inr }}"
+                                           data-mrp="{% if variant.discount_percent %}₹{{ variant.mrp|inr }}{% endif %}"
+                                           data-save="{% if variant.discount_percent %}Save ₹{{ variant.savings|inr }} ({{ variant.discount_percent }}% off){% endif %}"
+                                           data-pack="{{ variant.label }} pack"
+                                           data-rate="{% if variant.unit_rate %}· ₹{{ variant.unit_rate|inr }}{{ variant.unit_rate_label }}{% endif %}"
                                            {% if variant.pk == selected_variant.pk %}checked{% endif %}
                                            {% if not variant.in_stock %}disabled{% endif %} required>
                                     <span class="variant-body">
@@ -149,18 +168,15 @@
                         </div>
 
                         {% if product.in_stock %}
-                            <div class="btn-row" style="align-items:center; margin-bottom:1rem;">
+                            <div class="pdp-actions">
                                 <span class="qty-stepper">
                                     <button type="button" data-step="down" aria-label="Decrease quantity">−</button>
                                     <input type="number" name="quantity" value="1" min="1" max="99" aria-label="Quantity">
                                     <button type="button" data-step="up" aria-label="Increase quantity">+</button>
                                 </span>
-                            </div>
-
-                            <div class="btn-row">
-                                <button type="submit" class="btn" style="flex:1 1 200px;">🛒 Add to Cart</button>
-                                <button type="submit" name="buy_now" value="1" class="btn btn-success" style="flex:1 1 160px;">
-                                    ⚡ Buy Now
+                                <button type="submit" class="btn pdp-add">Add to Cart</button>
+                                <button type="submit" name="buy_now" value="1" class="btn btn-success pdp-buynow">
+                                    Buy Now
                                 </button>
                             </div>
                         {% else %}
@@ -173,13 +189,28 @@
                     </div>
                 {% endif %}
 
-                <div class="info-panel" style="margin-top:1.5rem; padding:1rem;">
-                    <div style="display:grid; gap:0.4rem; font-size:0.9rem;">
-                        <span>🚚 Free delivery above ₹{{ store.free_shipping_above|inr }} · else ₹{{ store.shipping_fee|inr }}</span>
-                        <span>📲 UPI payments accepted</span>
-                        <span>📦 Dispatched within 24 hours · delivered in {{ store.delivery_days }}-7 days</span>
-                    </div>
-                </div>
+                <ul class="pdp-assurance">
+                    <li>
+                        <span aria-hidden="true">🚚</span>
+                        <span>Free delivery above ₹{{ store.free_shipping_above|inr }}<br>
+                              <small>Otherwise ₹{{ store.shipping_fee|inr }} anywhere in India</small></span>
+                    </li>
+                    <li>
+                        <span aria-hidden="true">📦</span>
+                        <span>Dispatched within 24 hours<br>
+                              <small>Delivered in {{ store.delivery_days }}-7 days</small></span>
+                    </li>
+                    <li>
+                        <span aria-hidden="true">📲</span>
+                        <span>Pay by UPI<br>
+                              <small>GPay, PhonePe or any UPI app</small></span>
+                    </li>
+                    <li>
+                        <span aria-hidden="true">🌾</span>
+                        <span>Pressed to order<br>
+                              <small>FSSAI {{ store.fssai_number }}</small></span>
+                    </li>
+                </ul>
             </div>
         </div>
 
@@ -274,6 +305,34 @@
 </div>
 
 <script>
+    // Selecting a pack size updates the headline price above the picker
+    (function () {
+        var radios = document.querySelectorAll('#buy-form input[name="variant"]');
+        if (!radios.length) return;
+
+        var set = function (sel, value) {
+            var el = document.querySelector(sel);
+            if (el) el.textContent = value || '';
+        };
+
+        radios.forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                if (!radio.checked) return;
+                var d = radio.dataset;
+                set('[data-pdp-price]', d.price);
+                set('[data-pdp-mrp]', d.mrp);
+                set('[data-pdp-pack]', d.pack);
+                set('[data-pdp-rate]', d.rate);
+
+                var save = document.querySelector('[data-pdp-save]');
+                if (save) {
+                    save.textContent = d.save || '';
+                    save.hidden = !d.save;
+                }
+            });
+        });
+    })();
+
     // Thumbnail click swaps the main image and marks which one is showing
     (function () {
         var main = document.getElementById('main-image');

@@ -1143,6 +1143,117 @@
             transform: translateY(-2px);
         }
 
+        /* ---- Product page buy box ---- */
+        .pdp-eyebrow {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+            margin-bottom: 0.4rem;
+        }
+
+        .pdp-eyebrow a { color: inherit; text-decoration: none; }
+        .pdp-eyebrow a:hover { color: var(--accent-text); }
+
+        .pdp-title {
+            font-size: clamp(1.5rem, 3.5vw, 2rem);
+            line-height: 1.25;
+            color: var(--dark);
+            margin: 0 0 0.5rem;
+        }
+
+        .pdp-lead {
+            color: var(--muted);
+            margin-bottom: 1rem;
+            max-width: 60ch;
+        }
+
+        .pdp-price {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0.5rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .pdp-price-now {
+            font-size: clamp(1.75rem, 4vw, 2.25rem);
+            font-weight: 800;
+            color: var(--accent-text);
+            line-height: 1;
+        }
+
+        .pdp-price-was {
+            font-size: 1rem;
+            color: var(--muted);
+            text-decoration: line-through;
+            white-space: nowrap;
+        }
+
+        .pdp-price-was:empty { display: none; }
+
+        .pdp-price-save {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--green);
+            background: #eaf4ec;
+            border-radius: 999px;
+            padding: 0.2rem 0.6rem;
+            white-space: nowrap;
+        }
+
+        .pdp-price-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 1.25rem;
+        }
+
+        .pdp-tax { width: 100%; font-size: 0.78rem; }
+
+        .pdp-certs { margin-bottom: 1.5rem; }
+
+        .pdp-section-heading {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin: 0 0 0.6rem;
+        }
+
+        .pdp-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            align-items: center;
+            margin-top: 1.25rem;
+        }
+
+        .pdp-add { flex: 1 1 190px; }
+        .pdp-buynow { flex: 1 1 150px; }
+
+        .pdp-assurance {
+            list-style: none;
+            margin: 1.5rem 0 0;
+            padding: 1rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
+            gap: 0.9rem;
+            background: var(--light);
+            border-radius: 12px;
+        }
+
+        .pdp-assurance li {
+            display: flex;
+            gap: 0.6rem;
+            align-items: flex-start;
+            font-size: 0.88rem;
+            line-height: 1.4;
+        }
+
+        .pdp-assurance small { color: var(--muted); font-size: 0.78rem; }
+
         /* Long-form copy under the buy box: capped measure so lines stay
            readable instead of running the full width of a desktop screen. */
         .detail-copy {

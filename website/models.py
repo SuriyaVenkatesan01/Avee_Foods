@@ -123,7 +123,13 @@ class Category(models.Model):
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
-        return reverse('website:category_detail', args=[self.slug])
+        """The filtered listing -- the standalone category page was retired.
+
+        Every menu, breadcrumb and pill picks this up at once, and the old
+        /category/<slug>/ URL still 301s to the same place for links that
+        were already out in the world.
+        """
+        return f"{reverse('website:food_products')}?category={self.slug}"
 
     @property
     def label(self):
