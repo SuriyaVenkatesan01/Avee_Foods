@@ -71,28 +71,41 @@
             <div class="detail-gallery">
                 {% if product.image or product.images.all %}
                     <div class="pdp-gallery" data-gallery>
-                        <div class="pdp-slides" data-gallery-track tabindex="0"
-                             role="group" aria-label="{{ product.name }} images">
-                            {% if product.image %}
-                                <figure class="pdp-slide">
-                                    <img src="{{ product.image.url }}" alt="{{ product.name }}"
-                                         fetchpriority="high" decoding="async">
-                                </figure>
-                            {% endif %}
-                            {% for extra in product.images.all %}
-                                <figure class="pdp-slide">
-                                    <img src="{{ extra.image.url }}"
-                                         alt="{{ extra.alt_text|default:product.name }}"
-                                         loading="lazy" decoding="async">
-                                </figure>
-                            {% endfor %}
-                        </div>
+                        {# One large image, and every image as a sliding strip
+                           underneath. Tapping a strip image swaps the big one. #}
+                        <figure class="pdp-main">
+                            <img id="main-image" data-gallery-main
+                                 src="{% if product.image %}{{ product.image.url }}{% else %}{{ product.images.all.0.image.url }}{% endif %}"
+                                 alt="{{ product.name }}" fetchpriority="high" decoding="async">
+                        </figure>
 
-                        <button type="button" class="pdp-gnav pdp-gprev" data-gallery-prev
-                                aria-label="Previous image" hidden>&#8249;</button>
-                        <button type="button" class="pdp-gnav pdp-gnext" data-gallery-next
-                                aria-label="Next image" hidden>&#8250;</button>
-                        <div class="pdp-dots" data-gallery-dots></div>
+                        <div class="pdp-strip-wrap">
+                            <div class="pdp-strip" data-gallery-track tabindex="0"
+                                 role="group" aria-label="{{ product.name }} images">
+                                {% if product.image %}
+                                    <button type="button" class="pdp-thumb is-active"
+                                            data-gallery-thumb data-full="{{ product.image.url }}"
+                                            aria-label="Show image 1">
+                                        <img src="{{ product.image.url }}" alt="{{ product.name }}"
+                                             loading="lazy" decoding="async">
+                                    </button>
+                                {% endif %}
+                                {% for extra in product.images.all %}
+                                    <button type="button" class="pdp-thumb{% if not product.image and forloop.first %} is-active{% endif %}"
+                                            data-gallery-thumb data-full="{{ extra.image.url }}"
+                                            aria-label="Show image {% if product.image %}{{ forloop.counter|add:1 }}{% else %}{{ forloop.counter }}{% endif %}">
+                                        <img src="{{ extra.image.url }}"
+                                             alt="{{ extra.alt_text|default:product.name }}"
+                                             loading="lazy" decoding="async">
+                                    </button>
+                                {% endfor %}
+                            </div>
+
+                            <button type="button" class="pdp-gnav pdp-gprev" data-gallery-prev
+                                    aria-label="Previous images" hidden>&#8249;</button>
+                            <button type="button" class="pdp-gnav pdp-gnext" data-gallery-next
+                                    aria-label="More images" hidden>&#8250;</button>
+                        </div>
                     </div>
                 {% else %}
                     <div class="product-image detail-image-placeholder">No Image</div>
@@ -361,81 +374,60 @@
         });
     })();
 
-    // Image slider. The track is a native scroll-snap strip, so swipe works
-    // with no JS at all; this only adds arrows, dots and keyboard support.
+    // Gallery: one big image, a sliding strip of every image below it.
+    // The strip is a native scrolling row, so it swipes without JS; this adds
+    // the click-to-swap, the arrows and keyboard support.
     (function () {
         var gallery = document.querySelector('[data-gallery]');
         if (!gallery) return;
 
+        var main = gallery.querySelector('[data-gallery-main]');
         var track = gallery.querySelector('[data-gallery-track]');
-        var slides = Array.prototype.slice.call(gallery.querySelectorAll('.pdp-slide'));
-        if (!track || slides.length < 2) return;   // one image needs no controls
+        var thumbs = Array.prototype.slice.call(
+            gallery.querySelectorAll('[data-gallery-thumb]'));
+        if (!main || !track || !thumbs.length) return;
 
-        var prev = gallery.querySelector('[data-gallery-prev]');
-        var next = gallery.querySelector('[data-gallery-next]');
-        var dotWrap = gallery.querySelector('[data-gallery-dots]');
-        var dots = [];
-
-        // Measure the slides rather than assuming one slide == one track width:
-        // the slide width is a percentage that can be tuned in the CSS, and
-        // anything other than 100% made the computed index drift.
-        var offsetOf = function (i) {
-            return slides[i].offsetLeft - track.offsetLeft;
-        };
-
-        var current = function () {
-            var x = track.scrollLeft;
-            var best = 0;
-            var bestGap = Infinity;
-            slides.forEach(function (slide, i) {
-                var gap = Math.abs(offsetOf(i) - x);
-                if (gap < bestGap) { bestGap = gap; best = i; }
+        var show = function (thumb) {
+            main.src = thumb.dataset.full;
+            main.alt = thumb.querySelector('img').alt || main.alt;
+            thumbs.forEach(function (other) {
+                other.classList.toggle('is-active', other === thumb);
             });
-            return best;
         };
 
-        var goTo = function (i) {
-            var index = Math.max(0, Math.min(slides.length - 1, i));
-            track.scrollTo({ left: offsetOf(index), behavior: 'smooth' });
-        };
-
-        slides.forEach(function (slide, i) {
-            var dot = document.createElement('button');
-            dot.type = 'button';
-            dot.className = 'pdp-dot';
-            dot.setAttribute('aria-label', 'Image ' + (i + 1) + ' of ' + slides.length);
-            dot.addEventListener('click', function () { goTo(i); });
-            dotWrap.appendChild(dot);
-            dots.push(dot);
+        thumbs.forEach(function (thumb, i) {
+            thumb.addEventListener('click', function () { show(thumb); });
+            thumb.addEventListener('keydown', function (e) {
+                var step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+                if (!step) return;
+                e.preventDefault();
+                var nextThumb = thumbs[(i + step + thumbs.length) % thumbs.length];
+                nextThumb.focus();
+                show(nextThumb);
+            });
         });
 
+        // Arrows only matter when the strip actually overflows
+        var prev = gallery.querySelector('[data-gallery-prev]');
+        var next = gallery.querySelector('[data-gallery-next]');
+        if (!prev || !next) return;
+
+        var page = function () {
+            return Math.max(track.clientWidth - 40, 80);
+        };
+
         var sync = function () {
-            var i = current();
-            dots.forEach(function (dot, n) {
-                dot.classList.toggle('is-active', n === i);
-            });
-            var atStart = track.scrollLeft <= 1;
-            var atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 1;
-            prev.hidden = atStart;
-            next.hidden = atEnd;
-            // Nothing to scroll: every slide already fits on screen
-            var fits = track.scrollWidth <= track.clientWidth + 1;
-            dotWrap.hidden = fits;
-            if (fits) { prev.hidden = true; next.hidden = true; }
+            var overflows = track.scrollWidth > track.clientWidth + 1;
+            prev.hidden = !overflows || track.scrollLeft <= 1;
+            next.hidden = !overflows ||
+                track.scrollLeft + track.clientWidth >= track.scrollWidth - 1;
         };
 
-        var perView = function () {
-            return Math.max(1, Math.round(track.clientWidth / slides[0].offsetWidth));
-        };
-
-        prev.addEventListener('click', function () { goTo(current() - perView()); });
-        next.addEventListener('click', function () { goTo(current() + perView()); });
-
-        track.addEventListener('keydown', function (e) {
-            var step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
-            if (!step) return;
-            e.preventDefault();
-            goTo(current() + step);
+        prev.addEventListener('click', function () {
+            track.scrollBy({ left: -page(), behavior: 'smooth' });
+        });
+        next.addEventListener('click', function () {
+            track.scrollBy({ left: page(), behavior: 'smooth' });
         });
 
         var pending;
