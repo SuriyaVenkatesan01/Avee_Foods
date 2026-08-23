@@ -92,20 +92,12 @@
 
             <!-- ============ BUY BOX ============ -->
             <div class="pdp-buy">
-                {% if product.category %}
-                    <div class="pdp-eyebrow">
-                        <a href="{% url 'website:food_products' %}?category={{ product.category.slug }}">{{ product.category.label }}</a>
-                    </div>
-                {% endif %}
 
                 <h1 class="pdp-title">{{ product.name }}</h1>
 
                 {% if product.short_description %}
                     <p class="pdp-lead">{{ product.short_description }}</p>
                 {% endif %}
-
-                {# Headline price for the pack currently selected -- the JS at the
-                   foot of this page keeps it in step with the radio buttons. #}
                 {% if selected_variant %}
                     <div class="pdp-price">
                         <span class="pdp-price-now" data-pdp-price>₹{{ selected_variant.price|inr }}</span>
@@ -214,14 +206,31 @@
             </div>
         </div>
 
-        <!-- ============ DESCRIPTION + JSON DETAIL BLOCKS ============ -->
-        <div class="detail-copy">
-            <div>
-                <h2 class="section-title">About this product</h2>
-                <p style="line-height:1.8; color:#5f6b73;">{{ product.description|linebreaksbr }}</p>
+        <!-- ============ TABBED DETAIL ============ -->
+        {# One long column of headings made this page a marathon. The same
+           content is grouped into three tabs; without JavaScript every panel
+           simply stays open, so nothing is ever unreachable. #}
+        <div class="pdp-tabs" data-pdp-tabs>
+            <div class="pdp-tablist" role="tablist" aria-label="Product information">
+                <button type="button" class="pdp-tab" role="tab" id="tab-about"
+                        aria-controls="panel-about" aria-selected="true">Description</button>
+                {% if product.specifications or product.ingredients or product.storage %}
+                    <button type="button" class="pdp-tab" role="tab" id="tab-details"
+                            aria-controls="panel-details" aria-selected="false">Details</button>
+                {% endif %}
+                {% if product.nutrition.values %}
+                    <button type="button" class="pdp-tab" role="tab" id="tab-nutrition"
+                            aria-controls="panel-nutrition" aria-selected="false">Nutrition</button>
+                {% endif %}
+            </div>
+
+            <section class="pdp-panel" role="tabpanel" id="panel-about" aria-labelledby="tab-about">
+                <div class="pdp-prose">
+                    <p>{{ product.description|linebreaksbr }}</p>
+                </div>
 
                 {% if product.highlights %}
-                    <h3 class="section-title" style="font-size:1.1rem; margin-top:1.5rem;">Why you'll like it</h3>
+                    <h3 class="pdp-subheading">Why you'll like it</h3>
                     <ul class="tick-list">
                         {% for point in product.highlights %}
                             <li>{{ point }}</li>
@@ -230,66 +239,68 @@
                 {% endif %}
 
                 {% if product.usage %}
-                    <h3 class="section-title" style="font-size:1.1rem; margin-top:1.5rem;">Best used for</h3>
+                    <h3 class="pdp-subheading">Best used for</h3>
                     <div class="tag-row">
                         {% for use in product.usage %}
                             <span class="tag">{{ use }}</span>
                         {% endfor %}
                     </div>
                 {% endif %}
+            </section>
 
-                {% if product.ingredients %}
-                    <h3 class="section-title" style="font-size:1.1rem; margin-top:1.5rem;">Ingredients</h3>
-                    <p style="color:#5f6b73;">{{ product.ingredients|join:", " }}</p>
-                {% endif %}
+            {% if product.specifications or product.ingredients or product.storage %}
+                <section class="pdp-panel" role="tabpanel" id="panel-details" aria-labelledby="tab-details">
+                    {% if product.ingredients %}
+                        <h3 class="pdp-subheading">Ingredients</h3>
+                        <div class="pdp-prose"><p>{{ product.ingredients|join:", " }}</p></div>
+                    {% endif %}
 
-                {% if product.storage %}
-                    <h3 class="section-title" style="font-size:1.1rem; margin-top:1.5rem;">Storage</h3>
-                    <p style="color:#5f6b73;">{{ product.storage }}</p>
-                {% endif %}
-            </div>
+                    {% if product.storage %}
+                        <h3 class="pdp-subheading">Storage</h3>
+                        <div class="pdp-prose"><p>{{ product.storage }}</p></div>
+                    {% endif %}
 
-            <div>
-                {% if product.specifications %}
-                    <h2 class="section-title">Specifications</h2>
-                    <table class="spec-table">
-                        <tbody>
-                            {% for key, value in product.specifications.items %}
-                                <tr>
-                                    <th scope="row">{{ key }}</th>
-                                    <td>{{ value }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                {% endif %}
+                    {% if product.specifications %}
+                        <h3 class="pdp-subheading">Specifications</h3>
+                        <div class="table-scroll">
+                            <table class="spec-table">
+                                <tbody>
+                                    {% for key, value in product.specifications.items %}
+                                        <tr>
+                                            <th scope="row">{{ key|field_label }}</th>
+                                            <td>{{ value }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+                </section>
+            {% endif %}
 
-                {% if product.nutrition.values %}
-                    <h2 class="section-title" style="margin-top:1.5rem;">
+            {% if product.nutrition.values %}
+                <section class="pdp-panel" role="tabpanel" id="panel-nutrition" aria-labelledby="tab-nutrition">
+                    <h3 class="pdp-subheading">
                         Nutrition
                         {% if product.nutrition.basis %}
-                            <span style="font-size:0.8rem; color:var(--muted); font-weight:normal;">
-                                ({{ product.nutrition.basis }})
-                            </span>
+                            <span class="pdp-basis">({{ product.nutrition.basis }})</span>
                         {% endif %}
-                    </h2>
-                    <table class="spec-table">
-                        <tbody>
-                            {% for key, value in product.nutrition.values.items %}
-                                <tr>
-                                    <th scope="row">{{ key }}</th>
-                                    <td>{{ value }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                {% endif %}
-            </div>
+                    </h3>
+                    <div class="table-scroll">
+                        <table class="spec-table">
+                            <tbody>
+                                {% for key, value in product.nutrition.values.items %}
+                                    <tr>
+                                        <th scope="row">{{ key|field_label }}</th>
+                                        <td>{{ value }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            {% endif %}
         </div>
-    </div>
-
-    <div style="margin-top:2rem;">
-        {% include 'website/partials/_journey.html' with stages=process_stages journey_title="How this reaches you" %}
     </div>
 
     {% if related_products %}
@@ -305,6 +316,43 @@
 </div>
 
 <script>
+    // Product information tabs. Progressive enhancement: the markup ships
+    // with every panel open, and this takes over only if it runs.
+    (function () {
+        var wrap = document.querySelector('[data-pdp-tabs]');
+        if (!wrap) return;
+
+        var tabs = Array.prototype.slice.call(wrap.querySelectorAll('[role="tab"]'));
+        if (tabs.length < 2) return;          // one panel needs no tab strip
+
+        var panelFor = function (tab) {
+            return document.getElementById(tab.getAttribute('aria-controls'));
+        };
+
+        var select = function (tab, focus) {
+            tabs.forEach(function (other) {
+                var on = other === tab;
+                other.setAttribute('aria-selected', on ? 'true' : 'false');
+                other.tabIndex = on ? 0 : -1;
+                var panel = panelFor(other);
+                if (panel) panel.hidden = !on;
+            });
+            if (focus) tab.focus();
+        };
+
+        wrap.classList.add('js-tabs');
+        tabs.forEach(function (tab, i) {
+            tab.addEventListener('click', function () { select(tab); });
+            tab.addEventListener('keydown', function (e) {
+                var step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+                if (!step) return;
+                e.preventDefault();
+                select(tabs[(i + step + tabs.length) % tabs.length], true);
+            });
+        });
+        select(tabs[0]);
+    })();
+
     // Selecting a pack size updates the headline price above the picker
     (function () {
         var radios = document.querySelectorAll('#buy-form input[name="variant"]');

@@ -97,3 +97,15 @@ def category_icon(category):
         if finders.find(path):
             return static(path)
     return ''
+
+
+@register.filter
+def field_label(key):
+    """`shelf_life` -> `Shelf life`, for spec and nutrition table keys.
+
+    The dashboard stores these as free-form JSON keys, so they arrive in
+    whatever shape they were typed. Only the first word is capitalised, so
+    "total_fat" reads as "Total fat" rather than title-cased "Total Fat".
+    """
+    text = str(key or '').replace('_', ' ').replace('-', ' ').strip()
+    return text[:1].upper() + text[1:] if text else ''

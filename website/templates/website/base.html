@@ -1254,17 +1254,92 @@
 
         .pdp-assurance small { color: var(--muted); font-size: 0.78rem; }
 
-        /* Long-form copy under the buy box: capped measure so lines stay
-           readable instead of running the full width of a desktop screen. */
-        .detail-copy {
-            margin-top: 1rem;
-            padding-top: clamp(1.5rem, 4vw, 2rem);
+        /* ---- Product page tabs ---- */
+        .pdp-tabs {
+            margin-top: clamp(1.5rem, 4vw, 2.5rem);
             border-top: 1px solid var(--border);
+            padding-top: clamp(1.25rem, 3vw, 1.75rem);
         }
 
-        .detail-copy > div {
-            max-width: 72ch;
+        .pdp-tablist {
+            display: flex;
+            gap: 0.35rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.25rem;
         }
+
+        .pdp-tab {
+            font-family: inherit;
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--muted);
+            background: var(--light);
+            border: 1px solid transparent;
+            border-radius: 999px;
+            padding: 0.55rem 1.1rem;
+            min-height: 44px;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+        }
+
+        .pdp-tab:hover { color: var(--ink); }
+
+        .pdp-tab[aria-selected="true"] {
+            background: var(--dark);
+            border-color: var(--dark);
+            color: #fff;
+        }
+
+        .pdp-tab:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        /* Without JS the tab strip is meaningless, so it stays hidden and
+           every panel shows -- the content is never trapped behind a button
+           that cannot work. JS reveals the strip and takes over. */
+        .pdp-tablist { display: none; }
+        .js-tabs .pdp-tablist { display: flex; }
+
+        .pdp-panel + .pdp-panel {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--light);
+        }
+
+        .js-tabs .pdp-panel + .pdp-panel {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: 0;
+        }
+
+        .pdp-prose {
+            max-width: 68ch;
+            line-height: 1.8;
+            color: var(--muted);
+        }
+
+        .pdp-prose p { margin-bottom: 0.9rem; }
+
+        .pdp-subheading {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin: 1.5rem 0 0.6rem;
+        }
+
+        .pdp-panel > .pdp-subheading:first-child { margin-top: 0; }
+
+        .pdp-basis {
+            font-size: 0.8rem;
+            color: var(--muted);
+            font-weight: normal;
+        }
+
+        /* Spec and nutrition tables read as two columns, not full-bleed rows */
+        .pdp-panel .spec-table { max-width: 620px; }
+
+        .table-scroll { overflow-x: auto; }
 
         .related-products {
             margin-top: clamp(2rem, 6vw, 3rem);
