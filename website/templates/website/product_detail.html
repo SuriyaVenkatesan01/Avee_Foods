@@ -11,7 +11,7 @@
 {% block og_image %}{% if product.image %}{{ request.scheme }}://{{ request.get_host }}{{ product.image.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% load static %}{% static 'img/logo-192.png' %}{% endif %}{% endblock %}
 
 {% block head_extra %}
-{# Product schema -- puts the price and stock status straight into Google #}
+
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -71,8 +71,6 @@
             <div class="detail-gallery">
                 {% if product.image or product.images.all %}
                     <div class="pdp-gallery" data-gallery>
-                        {# One large image, and every image as a sliding strip
-                           underneath. Tapping a strip image swaps the big one. #}
                         <figure class="pdp-main">
                             <img id="main-image" data-gallery-main
                                  src="{% if product.image %}{{ product.image.url }}{% else %}{{ product.images.all.0.image.url }}{% endif %}"

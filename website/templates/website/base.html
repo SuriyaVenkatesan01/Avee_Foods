@@ -1088,32 +1088,46 @@
             grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
             gap: clamp(1.5rem, 4vw, 3rem);
             margin-bottom: clamp(2rem, 6vw, 3rem);
-            align-items: start;
+            /* Both columns run to the same height: with `start` the gallery
+               stopped short of the buy box and the two sides looked lopsided. */
+            align-items: stretch;
         }
 
-        /* The gallery follows you down a long buy box instead of scrolling
-           away. Only where there is room for it. */
-        @media (min-width: 901px) {
-            .detail-gallery {
-                position: sticky;
-                top: calc(var(--header-h) + 1rem);
-            }
-        }
+        .detail-gallery { display: flex; flex-direction: column; }
 
         /* ---- Product gallery: one big image, a sliding strip below ---- */
-        .pdp-gallery { position: relative; width: 100%; }
+        .pdp-gallery {
+            position: relative;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
 
         .pdp-main {
             margin: 0 0 0.75rem;
             border: 1px solid var(--border);
             border-radius: 14px;
             background: #fff;
-            aspect-ratio: 1 / 1;
+            /* Grows to whatever height the buy box needs, so the two columns
+               finish level. The square is the floor, not a fixed size. */
+            flex: 1;
+            min-height: min(60vw, 420px);
             display: flex;
             align-items: center;
             justify-content: center;
             padding: clamp(1rem, 3vw, 2rem);
             overflow: hidden;
+        }
+
+        /* Stacked on small screens there is no second column to match, so the
+           image goes back to a plain square. */
+        @media (max-width: 900px) {
+            .pdp-main {
+                flex: 0 0 auto;
+                aspect-ratio: 1 / 1;
+                min-height: 0;
+            }
         }
 
         .pdp-main img {
