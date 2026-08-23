@@ -6,8 +6,8 @@ The whole card is a link to the product: `.card-link` stretches over the card
 with a pseudo-element. Anything that must stay separately clickable -- the size
 chips and the add-to-cart form -- is lifted above it with z-index.
 
-Picking a size chip swaps the price, the MRP, the discount ribbon and the add
-button in place, so a customer can add any pack straight from the grid.
+Picking a size chip swaps the price, the MRP and the discount ribbon in place,
+and repoints the form, so a customer can add any pack straight from the grid.
 
 Context:
   product -- FoodProduct (required)
@@ -64,7 +64,7 @@ Context:
                     <input type="hidden" name="variant" value="{{ variant.pk }}" data-card-variant-input>
                     <input type="hidden" name="quantity" value="1">
                     <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                    <button type="submit" class="btn btn-block" data-card-add>Add {{ variant.label }}</button>
+                    <button type="submit" class="btn btn-block">Add to Cart</button>
                 </form>
             {% else %}
                 <div class="card-add">
