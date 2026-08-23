@@ -1088,25 +1088,20 @@
             grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
             gap: clamp(1.5rem, 4vw, 3rem);
             margin-bottom: clamp(2rem, 6vw, 3rem);
-            /* Both columns run to the same height: with `start` the gallery
-               stopped short of the buy box and the two sides looked lopsided. */
-            align-items: stretch;
+            /* `start`: the gallery has its own height now, and stretching
+               let the image dictate the row height. */
+            align-items: start;
         }
 
-        .detail-gallery { display: flex; flex-direction: column; }
 
         /* ---- Product gallery: the images themselves slide ---- */
         .pdp-gallery {
             position: relative;
             width: 100%;
-            display: flex;
-            flex-direction: column;
-            flex: 1;
         }
 
         .pdp-slides {
             display: flex;
-            flex: 1;
             overflow-x: auto;
             scroll-snap-type: x mandatory;
             scroll-behavior: smooth;
@@ -1114,7 +1109,11 @@
             border: 1px solid var(--border);
             border-radius: 14px;
             background: #fff;
-            min-height: min(60vw, 420px);
+            /* A definite height, not `flex: 1`. Without one the image had
+               nothing to size against, so max-height did nothing and the
+               picture rendered at its natural size -- towering over the buy
+               box. This keeps the two columns in proportion. */
+            height: clamp(300px, 30vw, 440px);
         }
 
         .pdp-slides::-webkit-scrollbar { display: none; }
@@ -1145,9 +1144,8 @@
            slide goes back to a plain square. */
         @media (max-width: 900px) {
             .pdp-slides {
-                flex: 0 0 auto;
+                height: auto;
                 aspect-ratio: 1 / 1;
-                min-height: 0;
             }
         }
 

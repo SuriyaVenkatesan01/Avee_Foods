@@ -70,8 +70,11 @@
             <!-- ============ IMAGES ============ -->
             <div class="detail-gallery">
                 {% if product.image or product.images.all %}
-                    {# Slide format: the images themselves swipe, with dots for
-                       position -- no thumbnail row underneath. #}
+                    {% comment %}
+                        Slide format: the images themselves swipe, with dots
+                        for position -- no thumbnail row underneath.
+                        {# #} cannot span lines; it renders as page text.
+                    {% endcomment %}
                     <div class="pdp-gallery" data-gallery>
                         <div class="pdp-slides" data-gallery-track tabindex="0"
                              role="group" aria-label="{{ product.name }} images">
