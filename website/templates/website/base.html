@@ -1081,25 +1081,42 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
-        /* Two-column detail layout that collapses to one column on tablet/mobile */
+        /* Product page: gallery on the left, everything you buy with on the
+           right. Collapses to one column on tablet/mobile. */
         .detail-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: clamp(1.5rem, 4vw, 2rem);
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: clamp(1.5rem, 4vw, 3rem);
             margin-bottom: clamp(2rem, 6vw, 3rem);
+            align-items: start;
+        }
+
+        /* The gallery follows you down a long buy box instead of scrolling
+           away. Only where there is room for it. */
+        @media (min-width: 901px) {
+            .detail-gallery {
+                position: sticky;
+                top: calc(var(--header-h) + 1rem);
+            }
         }
 
         .detail-image {
             width: 100%;
-            height: clamp(240px, 45vw, 400px);
-            object-fit: cover;
-            margin-bottom: 1rem;
-            border-radius: 8px;
+            aspect-ratio: 1 / 1;
+            height: auto;
+            /* `contain` on a white tile: the whole bottle, not a crop of it */
+            object-fit: contain;
+            background: #fff;
+            border: 1px solid var(--border);
+            padding: clamp(0.75rem, 2vw, 1.5rem);
+            margin-bottom: 0.75rem;
+            border-radius: 14px;
         }
 
         .detail-image-placeholder {
-            height: clamp(240px, 45vw, 400px);
-            border-radius: 8px;
+            aspect-ratio: 1 / 1;
+            height: auto;
+            border-radius: 14px;
         }
 
         .thumb-row {
@@ -1109,12 +1126,33 @@
         }
 
         .thumb-row img {
-            width: 72px;
-            height: 72px;
-            object-fit: cover;
-            border-radius: 6px;
+            width: 68px;
+            height: 68px;
+            object-fit: contain;
+            background: #fff;
+            padding: 0.25rem;
+            border-radius: 10px;
             border: 1px solid var(--border);
             cursor: pointer;
+            transition: border-color 0.15s, transform 0.15s;
+        }
+
+        .thumb-row img:hover,
+        .thumb-row img.is-active {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        /* Long-form copy under the buy box: capped measure so lines stay
+           readable instead of running the full width of a desktop screen. */
+        .detail-copy {
+            margin-top: 1rem;
+            padding-top: clamp(1.5rem, 4vw, 2rem);
+            border-top: 1px solid var(--border);
+        }
+
+        .detail-copy > div {
+            max-width: 72ch;
         }
 
         .related-products {

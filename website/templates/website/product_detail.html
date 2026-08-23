@@ -68,7 +68,7 @@
     <div class="detail-section">
         <div class="detail-grid">
             <!-- ============ IMAGES ============ -->
-            <div>
+            <div class="detail-gallery">
                 {% if product.image %}
                     <img src="{{ product.image.url }}" alt="{{ product.name }}" class="detail-image" id="main-image"
                          fetchpriority="high" decoding="async">
@@ -80,10 +80,11 @@
                     <div class="thumb-row">
                         {% if product.image %}
                             <img src="{{ product.image.url }}" alt="{{ product.name }}" data-full="{{ product.image.url }}"
-                                 loading="lazy" decoding="async">
+                                 class="is-active" loading="lazy" decoding="async">
                         {% endif %}
                         {% for extra in product.images.all %}
-                            <img src="{{ extra.image.url }}" alt="{{ extra.alt_text|default:product.name }}" data-full="{{ extra.image.url }}">
+                            <img src="{{ extra.image.url }}" alt="{{ extra.alt_text|default:product.name }}" data-full="{{ extra.image.url }}"
+                                 loading="lazy" decoding="async">
                         {% endfor %}
                     </div>
                 {% endif %}
@@ -183,7 +184,7 @@
         </div>
 
         <!-- ============ DESCRIPTION + JSON DETAIL BLOCKS ============ -->
-        <div class="auto-grid" style="margin-top:1rem;">
+        <div class="detail-copy">
             <div>
                 <h2 class="section-title">About this product</h2>
                 <p style="line-height:1.8; color:#5f6b73;">{{ product.description|linebreaksbr }}</p>
@@ -252,34 +253,8 @@
                         </tbody>
                     </table>
                 {% endif %}
-
-                {% if product.sourcing %}
-                    <h2 class="section-title" style="margin-top:1.5rem;">Where it comes from</h2>
-                    <table class="spec-table">
-                        <tbody>
-                            {% for key, value in product.sourcing.items %}
-                                <tr>
-                                    <th scope="row">{{ key|title }}</th>
-                                    <td>{{ value }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                {% endif %}
             </div>
         </div>
-
-        {% if product.faq %}
-            <div style="margin-top:2rem;">
-                <h2 class="section-title">Frequently asked</h2>
-                {% for item in product.faq %}
-                    <details class="faq-item">
-                        <summary>{{ item.q }}</summary>
-                        <p>{{ item.a }}</p>
-                    </details>
-                {% endfor %}
-            </div>
-        {% endif %}
     </div>
 
     <div style="margin-top:2rem;">
@@ -299,13 +274,18 @@
 </div>
 
 <script>
-    // Thumbnail click swaps the main image
+    // Thumbnail click swaps the main image and marks which one is showing
     (function () {
         var main = document.getElementById('main-image');
         if (!main) return;
-        document.querySelectorAll('.thumb-row img').forEach(function (thumb) {
+        var thumbs = document.querySelectorAll('.thumb-row img');
+        thumbs.forEach(function (thumb) {
             thumb.addEventListener('click', function () {
                 main.src = thumb.dataset.full || thumb.src;
+                main.alt = thumb.alt || main.alt;
+                thumbs.forEach(function (other) {
+                    other.classList.toggle('is-active', other === thumb);
+                });
             });
         });
     })();

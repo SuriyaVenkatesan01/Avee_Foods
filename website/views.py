@@ -8,6 +8,7 @@ from django.db import transaction
 from django.db.models import Count, Min, Prefetch, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
@@ -223,16 +224,15 @@ def food_products(request):
 
 
 def category_detail(request, slug):
+    """The standalone category page is gone -- send it to the filtered listing.
+
+    The URL is kept as a permanent redirect rather than deleted: the header
+    menu, breadcrumbs, older links and anything already indexed still point
+    here, and a 301 lands all of them on the same products, filtered.
+    """
     category = get_object_or_404(Category, slug=slug, is_active=True)
-    context = {
-        'category': category,
-        'subcategories': category.subcategories.filter(is_active=True).annotate(
-            product_count=Count('products', filter=Q(products__is_active=True)),
-        ),
-        'products': _product_queryset().filter(category=category),
-        'process_stages': ProcessStage.for_category(category),
-    }
-    return render(request, 'website/category_detail.html', context)
+    url = f"{reverse('website:food_products')}?category={category.slug}"
+    return redirect(url, permanent=True)
 
 
 def subcategory_detail(request, category_slug, slug):

@@ -7,7 +7,7 @@ under /order/ or /track/ is private and is excluded from robots.txt too.
 from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
 
-from .models import Category, Combo, FoodProduct, SubCategory
+from .models import Combo, FoodProduct, SubCategory
 
 
 class StaticViewSitemap(Sitemap):
@@ -44,17 +44,6 @@ class ProductSitemap(Sitemap):
         return obj.updated_at
 
 
-class CategorySitemap(Sitemap):
-    changefreq = 'weekly'
-    priority = 0.7
-
-    def items(self):
-        return Category.objects.filter(is_active=True).order_by('id')
-
-    def lastmod(self, obj):
-        return obj.updated_at
-
-
 class SubCategorySitemap(Sitemap):
     changefreq = 'weekly'
     priority = 0.6
@@ -84,7 +73,6 @@ class ComboSitemap(Sitemap):
 SITEMAPS = {
     'static': StaticViewSitemap,
     'products': ProductSitemap,
-    'categories': CategorySitemap,
     'subcategories': SubCategorySitemap,
     'combos': ComboSitemap,
 }
