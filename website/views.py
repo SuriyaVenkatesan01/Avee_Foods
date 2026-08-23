@@ -8,7 +8,6 @@ from django.db import transaction
 from django.db.models import Count, Min, Prefetch, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
@@ -231,25 +230,17 @@ def category_detail(request, slug):
     here, and a 301 lands all of them on the same products, filtered.
     """
     category = get_object_or_404(Category, slug=slug, is_active=True)
-    url = f"{reverse('website:food_products')}?category={category.slug}"
-    return redirect(url, permanent=True)
+    return redirect(category.get_absolute_url(), permanent=True)
 
 
 def subcategory_detail(request, category_slug, slug):
+    """Retired like the category page -- 301 to the filtered listing."""
     subcategory = get_object_or_404(
         SubCategory.objects.select_related('category'),
         slug=slug, category__slug=category_slug,
         is_active=True, category__is_active=True,
     )
-    category = subcategory.category
-    context = {
-        'subcategory': subcategory,
-        'category': category,
-        'siblings': category.subcategories.filter(is_active=True),
-        'products': _product_queryset().filter(subcategory=subcategory),
-        'process_stages': ProcessStage.for_category(category),
-    }
-    return render(request, 'website/subcategory_detail.html', context)
+    return redirect(subcategory.get_absolute_url(), permanent=True)
 
 
 def product_detail(request, slug):

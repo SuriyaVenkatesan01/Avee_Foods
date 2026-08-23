@@ -195,7 +195,10 @@ class SubCategory(models.Model):
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
-        return reverse('website:subcategory_detail', args=[self.category.slug, self.slug])
+        # The standalone subcategory page was retired; the filtered listing is
+        # canonical. /category/<cat>/<sub>/ still 301s here.
+        return (f"{reverse('website:food_products')}"
+                f'?category={self.category.slug}&subcategory={self.slug}')
 
     @property
     def active_products(self):
