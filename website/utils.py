@@ -1,11 +1,20 @@
 """Small helpers shared by the checkout and payment views."""
 
+import hashlib
+import logging
 import re
+import secrets
+import string
 from decimal import Decimal
 from io import BytesIO
 from urllib.parse import quote
 
 from django.conf import settings
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.urls import reverse
+
+logger = logging.getLogger(__name__)
 
 
 def upi_payment_uri(order):
@@ -120,3 +129,85 @@ def remember_order(request, order):
     if order.order_number not in orders:
         orders.append(order.order_number)
         request.session['my_orders'] = orders[-25:]
+
+
+# ---------------------------------------------------------------------------
+# Email
+# ---------------------------------------------------------------------------
+
+def send_order_confirmation(order):
+    """Email the customer their confirmation, and copy the store.
+
+    Never raises: a mail server that is down or misconfigured must not lose an
+    order that has already been paid for and written to the database.
+    """
+    if not order.email:
+        return False
+
+    context = {
+        'order': order,
+        'items': list(order.items.all()),
+        'store': settings.STORE,
+        'site_url': settings.SITE_URL,
+        'track_url': f"{settings.SITE_URL}{reverse('website:track_order')}",
+    }
+    subject = f'Order {order.order_number} confirmed - Avee Foods'
+    body = render_to_string('website/email/order_confirmation.txt', context)
+
+    recipients = [order.email]
+    company = getattr(settings, 'COMPANY_EMAIL', '')
+    if company:
+        recipients.append(company)
+
+    return _send(subject, body, recipients, context=order.order_number)
+
+
+def send_tracking_otp(email, code, order_count):
+    """Email a one-time code before showing someone their orders."""
+    subject = f'{code} is your Avee Foods tracking code'
+    body = render_to_string('website/email/tracking_otp.txt', {
+        'code': code,
+        'order_count': order_count,
+        'minutes': settings.ORDER_OTP_TTL_SECONDS // 60,
+        'store': settings.STORE,
+    })
+    return _send(subject, body, [email], context='tracking OTP')
+
+
+def _send(subject, body, recipients, context=''):
+    try:
+        send_mail(
+            subject=subject,
+            message=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=recipients,
+            fail_silently=False,
+        )
+        return True
+    except Exception:
+        logger.exception('Could not send mail (%s) to %s', context, recipients)
+        return False
+
+
+# ---------------------------------------------------------------------------
+# Tracking one-time codes
+# ---------------------------------------------------------------------------
+
+def generate_otp():
+    length = settings.ORDER_OTP_LENGTH
+    return ''.join(secrets.choice(string.digits) for _ in range(length))
+
+
+def hash_otp(code):
+    """Only the hash goes in the session, never the code itself."""
+    salted = f'{settings.SECRET_KEY}:{code}'
+    return hashlib.sha256(salted.encode()).hexdigest()
+
+
+def mask_email(email):
+    """ab***@gmail.com -- enough to recognise, not enough to harvest."""
+    if not email or '@' not in email:
+        return ''
+    name, domain = email.split('@', 1)
+    keep = name[:2] if len(name) > 2 else name[:1]
+    return f'{keep}{"*" * max(3, len(name) - len(keep))}@{domain}'

@@ -181,15 +181,15 @@ STORE = {
     "name": "Avee Foods",
     "shipping_fee": Decimal("60.00"),
     "free_shipping_above": Decimal("1000.00"),
-    "cod_available": True,
-    "cod_max_order_value": Decimal("10000.00"),
+    # Cash on Delivery was withdrawn -- every order is prepaid by UPI.
+    "cod_available": False,
     # UPI collect details. `upi_id` must be the VPA money should land in.
     "upi_id": "suriya16696@oksbi",
     "upi_payee": "Suriya Venkatesan",
     "upi_enabled": True,
     "support_phone": "+91 70105 46105",
     "whatsapp": "917010546105",
-    "support_email": "orders@aveefoods.com",
+    "support_email": "aveeoils@gmail.com",
     # Social links in the mobile menu. Blank means "hide that icon", so drop a
     # full https:// URL in as each channel goes live.
     "facebook": "",
@@ -200,6 +200,41 @@ STORE = {
     "gst_number": "33ABCDE1234F1Z5",
     "fssai_number": "22426354000527",
 }
+
+
+# Email
+# https://docs.djangoproject.com/en/5.1/topics/email/
+#
+# Order confirmations and tracking codes go out over Gmail SMTP. Gmail needs an
+# App Password (not the account password), set as EMAIL_HOST_PASSWORD in the
+# environment. Without it we fall back to printing mail to the console, so
+# local development and a half-configured deploy still work rather than 500.
+
+COMPANY_EMAIL = "aveeoils@gmail.com"
+
+# Absolute base for links inside emails, where there is no request to build from
+SITE_URL = os.environ.get("SITE_URL", "https://www.aveefoods.in").rstrip("/")
+
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", COMPANY_EMAIL)
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+
+if EMAIL_HOST_PASSWORD:
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = True
+EMAIL_TIMEOUT = 20
+
+DEFAULT_FROM_EMAIL = f'Avee Foods <{EMAIL_HOST_USER}>'
+SERVER_EMAIL = EMAIL_HOST_USER
+
+# Tracking codes emailed to customers
+ORDER_OTP_LENGTH = 6
+ORDER_OTP_TTL_SECONDS = 10 * 60
+ORDER_OTP_MAX_ATTEMPTS = 5
 
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'avee_foods.settings')

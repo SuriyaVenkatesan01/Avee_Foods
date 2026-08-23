@@ -455,13 +455,8 @@ aggregate rating in the schema block would be unsupported.
             <details class="faq-q">
                 <summary>Do you offer cash on delivery?</summary>
                 <p>
-                    {% if store.cod_available %}
-                        Yes. Cash on delivery is available on orders up to
-                        &#8377;{{ store.cod_max_order_value|inr }}. You can also pay instantly by UPI.
-                    {% else %}
-                        We currently accept UPI payments only. Your order is confirmed as soon as the
-                        payment is verified.
-                    {% endif %}
+                    No. We accept UPI payments only -- GPay, PhonePe or any UPI app.
+                    Your order is confirmed as soon as the payment is verified.
                 </p>
             </details>
             <details class="faq-q">
@@ -531,7 +526,7 @@ aggregate rating in the schema block would be unsupported.
         <p>
             We deliver to every pincode in India, with free shipping on orders above
             &#8377;{{ store.free_shipping_above|inr }} and typical delivery in
-            {{ store.delivery_days }} days. Pay by UPI{% if store.cod_available %} or cash on delivery{% endif %}.
+            {{ store.delivery_days }} days. Pay by UPI.
             Need help choosing? Reach us at
             <a href="tel:{{ store.support_phone }}">{{ store.support_phone }}</a> or
             <a href="mailto:{{ store.support_email }}">{{ store.support_email }}</a>.

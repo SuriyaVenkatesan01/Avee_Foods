@@ -1,16 +1,3 @@
-"""Catalog, cart and order models for the Avee Foods storefront.
-
-The catalog is deliberately split into three layers so that launching a brand
-new product is a data entry job, never a code change:
-
-    Category        -> "Cold Pressed Oils", "Cashews", "Powders", ...
-    FoodProduct     -> "Groundnut Oil"  (marketing copy + `details` JSON)
-    ProductVariant  -> "250 ml", "500 ml", "1 L", "5 L", "15 L" (price + stock)
-
-Every sellable unit is a ProductVariant, so the same code path handles oil sold
-by volume and cashews sold by weight.
-"""
-
 import random
 import string
 from decimal import Decimal
@@ -799,7 +786,7 @@ class Order(models.Model):
 
     # -- payment ----------------------------------------------------------
     payment_method = models.CharField(
-        max_length=10, choices=PAYMENT_METHOD_CHOICES, default=PAYMENT_COD,
+        max_length=10, choices=PAYMENT_METHOD_CHOICES, default=PAYMENT_UPI,
     )
     payment_status = models.CharField(
         max_length=25, choices=PAYMENT_STATUS_CHOICES, default=PAY_PENDING,
@@ -833,12 +820,19 @@ class Order(models.Model):
             self.order_number = self.generate_order_number()
         super().save(*args, **kwargs)
 
+    ORDER_ID_LENGTH = 6
+    ORDER_ID_ALPHABET = string.ascii_uppercase + string.digits
+
     @staticmethod
     def generate_order_number():
-        stamp = timezone.localtime().strftime('%y%m%d')
+        """A short random code the customer can read out, e.g. AX3QE1.
+
+        Random rather than sequential so the code gives nothing away about how
+        many orders the store has taken, and short enough to type on a phone.
+        """
         while True:
-            suffix = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
-            number = f'AF{stamp}{suffix}'
+            number = ''.join(random.choices(
+                Order.ORDER_ID_ALPHABET, k=Order.ORDER_ID_LENGTH))
             if not Order.objects.filter(order_number=number).exists():
                 return number
 

@@ -1,0 +1,35 @@
+Hi {{ order.full_name }},
+
+Thank you for your order from {{ store.name }}.
+
+Your order number is {{ order.order_number }}
+Keep this code -- you need it (or your mobile number) to track the order.
+
+Track it here: {{ track_url }}
+
+WHAT YOU ORDERED
+{% for item in items %}- {{ item.quantity }} x {{ item.product_name }} ({{ item.variant_label }}) - Rs {{ item.line_total }}
+{% endfor %}
+Subtotal      Rs {{ order.subtotal }}
+Delivery      Rs {{ order.shipping_fee }}{% if order.discount %}
+Discount      Rs {{ order.discount }}{% endif %}
+TOTAL         Rs {{ order.total }}
+
+Payment: {{ order.get_payment_method_display }} ({{ order.get_payment_status_display }})
+
+DELIVERING TO
+{{ order.full_name }}
+{{ order.address_line1 }}{% if order.address_line2 %}
+{{ order.address_line2 }}{% endif %}{% if order.landmark %}
+Near {{ order.landmark }}{% endif %}
+{{ order.city }}{% if order.district %}, {{ order.district }}{% endif %}
+{{ order.state }} - {{ order.pincode }}
+Phone: {{ order.phone }}
+
+We usually deliver within {{ store.delivery_days }} days.
+
+Questions? Call {{ store.support_phone }} or reply to this email.
+
+{{ store.name }}
+{{ store.address }}
+FSSAI {{ store.fssai_number }}

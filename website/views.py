@@ -1,4 +1,5 @@
 import re
+from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.contrib import messages
@@ -7,6 +8,7 @@ from django.db import transaction
 from django.db.models import Count, Min, Prefetch, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from . import cart as cart_service
@@ -15,8 +17,9 @@ from .models import (
     Payment, ProcessStage, ProductVariant, SubCategory,
 )
 from .utils import (
-    build_order_from_cart, owns_order, reduce_stock, remember_order,
-    restore_stock, upi_payment_uri, upi_qr_svg,
+    build_order_from_cart, generate_otp, hash_otp, mask_email, owns_order,
+    reduce_stock, remember_order, restore_stock, send_order_confirmation,
+    send_tracking_otp, upi_payment_uri, upi_qr_svg,
 )
 
 INDIAN_STATES = [
@@ -64,15 +67,13 @@ def _normalise_phone(raw):
 
 
 def _payment_methods():
-    """Payment options currently switched on in settings.STORE."""
+    """Payment options currently switched on in settings.STORE.
+
+    Cash on Delivery was withdrawn -- every order is prepaid. Order.PAYMENT_COD
+    stays on the model so historical COD orders still render.
+    """
     cfg = settings.STORE
     methods = []
-    if cfg.get('cod_available', True):
-        methods.append({
-            'value': Order.PAYMENT_COD,
-            'label': 'Cash on Delivery',
-            'hint': 'Pay the delivery agent in cash when your order arrives.',
-        })
     if cfg.get('upi_enabled', True):
         methods.append({
             'value': Order.PAYMENT_UPI,
@@ -110,8 +111,12 @@ def _validate_checkout(post, cart_total):
     if data['alt_phone'] and not PHONE_RE.match(data['alt_phone']):
         errors['alt_phone'] = 'Enter a valid 10 digit mobile number, or leave it blank.'
 
-    if data['email'] and not EMAIL_RE.match(data['email']):
-        errors['email'] = 'Enter a valid email address, or leave it blank.'
+    if not data['email']:
+        errors['email'] = (
+            'Enter your email address -- your order confirmation and tracking '
+            'code are sent there.')
+    elif not EMAIL_RE.match(data['email']):
+        errors['email'] = 'Enter a valid email address.'
 
     if len(data['address_line1']) < 5:
         errors['address_line1'] = 'Enter the house / flat number and street.'
@@ -128,13 +133,6 @@ def _validate_checkout(post, cart_total):
     allowed = [method['value'] for method in _payment_methods()]
     if data['payment_method'] not in allowed:
         errors['payment_method'] = 'Please choose a payment method.'
-    elif data['payment_method'] == Order.PAYMENT_COD:
-        limit = settings.STORE.get('cod_max_order_value')
-        if limit and cart_total > limit:
-            errors['payment_method'] = (
-                f'Cash on Delivery is available only up to ₹{limit:.0f}. '
-                'Please pay by UPI for this order.'
-            )
 
     return data, errors
 
@@ -441,6 +439,10 @@ def checkout(request):
                 cart_service.release(request)
                 remember_order(request, order)
 
+            # After the transaction commits -- a slow mail server must not hold
+            # the row locks, and a failed send must not roll the order back.
+            send_order_confirmation(order)
+
             if order.payment_method == Order.PAYMENT_UPI:
                 return redirect('website:payment', order_number=order.order_number)
             return redirect('website:order_success', order_number=order.order_number)
@@ -563,31 +565,122 @@ def order_detail(request, order_number):
     })
 
 
+ORDER_ID_RE = re.compile(r'^[A-Z0-9]{6}$')
+
+OTP_SESSION_KEY = 'track_otp'
+
+
+def _find_orders(lookup):
+    """Orders matching either a 6 character order ID or a 10 digit mobile."""
+    if PHONE_RE.match(lookup):
+        return list(Order.objects.filter(phone=lookup).prefetch_related('items'))
+    if ORDER_ID_RE.match(lookup):
+        return list(Order.objects.filter(order_number=lookup).prefetch_related('items'))
+    return []
+
+
 def track_order(request):
-    data, errors = {'order_number': '', 'phone': ''}, {}
+    """Step one: look the orders up and email a code to the address on them."""
+    data, errors = {'lookup': ''}, {}
 
     if request.method == 'POST':
-        data = {
-            'order_number': (request.POST.get('order_number') or '').strip().upper(),
-            'phone': _normalise_phone(request.POST.get('phone')),
-        }
+        raw = (request.POST.get('lookup') or '').strip()
+        data['lookup'] = raw
 
-        if not data['order_number']:
-            errors['order_number'] = 'Enter the order number from your confirmation.'
-        if not PHONE_RE.match(data['phone']):
-            errors['phone'] = 'Enter the 10 digit mobile number used to order.'
+        # An order ID may be typed in lower case and can start with a digit, so
+        # length is what separates the two: 10+ digits can only be a mobile,
+        # anything else is treated as a 6 character order ID.
+        cleaned = re.sub(r'[\s\-()]', '', raw).upper()
+        digits = re.sub(r'\D', '', cleaned)
+        lookup = _normalise_phone(digits) if len(digits) >= 10 else cleaned
+
+        if not raw:
+            errors['lookup'] = 'Enter your order ID or the mobile number you ordered with.'
+        elif not (PHONE_RE.match(lookup) or ORDER_ID_RE.match(lookup)):
+            errors['lookup'] = (
+                'Enter a 6 character order ID (like AX3QE1) or your 10 digit mobile number.')
 
         if not errors:
-            order = Order.objects.filter(
-                order_number=data['order_number'], phone=data['phone'],
-            ).first()
-            if order:
-                remember_order(request, order)
-                return redirect('website:order_detail', order_number=order.order_number)
-            messages.error(
-                request, 'No order found with that number and mobile combination.')
+            orders = _find_orders(lookup)
+            if not orders:
+                messages.error(
+                    request, 'No orders found for that order ID or mobile number.')
+            else:
+                emails = [o.email for o in orders if o.email]
+                if not emails:
+                    # Older orders placed before email became compulsory
+                    return redirect(
+                        'website:order_detail', order_number=orders[0].order_number)
+
+                code = generate_otp()
+                request.session[OTP_SESSION_KEY] = {
+                    'hash': hash_otp(code),
+                    'email': emails[0],
+                    'orders': [o.order_number for o in orders],
+                    'expires': (timezone.now() + timedelta(
+                        seconds=settings.ORDER_OTP_TTL_SECONDS)).isoformat(),
+                    'attempts': 0,
+                }
+                send_tracking_otp(emails[0], code, len(orders))
+                return redirect('website:track_verify')
 
     return render(request, 'website/track_order.html', {'data': data, 'errors': errors})
+
+
+def track_verify(request):
+    """Step two: check the emailed code, then unlock those orders."""
+    pending = request.session.get(OTP_SESSION_KEY)
+    if not pending:
+        return redirect('website:track_order')
+
+    if timezone.now() > datetime.fromisoformat(pending['expires']):
+        request.session.pop(OTP_SESSION_KEY, None)
+        messages.error(request, 'That code expired. Please request a new one.')
+        return redirect('website:track_order')
+
+    errors = {}
+    if request.method == 'POST':
+        code = re.sub(r'\D', '', request.POST.get('code') or '')
+
+        if code and hash_otp(code) == pending['hash']:
+            orders = Order.objects.filter(order_number__in=pending['orders'])
+            for order in orders:
+                remember_order(request, order)
+            request.session.pop(OTP_SESSION_KEY, None)
+
+            if len(pending['orders']) == 1:
+                return redirect(
+                    'website:order_detail', order_number=pending['orders'][0])
+            return redirect('website:tracked_orders')
+
+        # Count the wrong guess first, so the last allowed try actually stops
+        # the flow instead of handing out one more.
+        pending['attempts'] += 1
+        if pending['attempts'] >= settings.ORDER_OTP_MAX_ATTEMPTS:
+            request.session.pop(OTP_SESSION_KEY, None)
+            messages.error(request, 'Too many wrong codes. Please start again.')
+            return redirect('website:track_order')
+
+        request.session[OTP_SESSION_KEY] = pending
+        remaining = settings.ORDER_OTP_MAX_ATTEMPTS - pending['attempts']
+        errors['code'] = f'That code is not right. {remaining} tries left.'
+
+    return render(request, 'website/track_verify.html', {
+        'masked_email': mask_email(pending['email']),
+        'order_count': len(pending['orders']),
+        'errors': errors,
+    })
+
+
+def tracked_orders(request):
+    """Every order unlocked in this browser -- the guest version of my-orders."""
+    numbers = request.session.get('my_orders', [])
+    orders = (Order.objects.filter(order_number__in=numbers)
+              .prefetch_related('items'))
+    if not orders:
+        messages.info(request, 'Look up your orders to see them here.')
+        return redirect('website:track_order')
+    return render(request, 'website/tracked_orders.html', {'orders': orders})
 
 
 @require_POST

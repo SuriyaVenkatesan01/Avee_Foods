@@ -32,6 +32,8 @@ urlpatterns = [
 
     # Order tracking
     path('track/', views.track_order, name='track_order'),
+    path('track/verify/', views.track_verify, name='track_verify'),
+    path('track/orders/', views.tracked_orders, name='tracked_orders'),
     path('order/<str:order_number>/', views.order_detail, name='order_detail'),
     path('order/<str:order_number>/cancel/', views.cancel_order, name='cancel_order'),
     path('my-orders/', views.my_orders, name='my_orders'),

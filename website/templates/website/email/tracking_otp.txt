@@ -1,0 +1,12 @@
+Your {{ store.name }} tracking code is:
+
+    {{ code }}
+
+Enter it on the tracking page to see {% if order_count == 1 %}your order{% else %}your {{ order_count }} orders{% endif %}.
+The code expires in {{ minutes }} minutes.
+
+If you did not ask to track an order, you can ignore this email -- nobody can
+see your order details without this code.
+
+{{ store.name }}
+{{ store.support_phone }}

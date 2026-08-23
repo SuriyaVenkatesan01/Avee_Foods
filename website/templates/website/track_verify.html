@@ -1,0 +1,34 @@
+{% extends 'website/base.html' %}
+
+{% block title %}Enter your code - Avee Foods{% endblock %}
+
+{% block content %}
+<div class="container container-narrow">
+    <h1 class="page-title">🔐 Enter your code</h1>
+    <p class="section-lead">
+        We emailed a 6 digit code to <strong>{{ masked_email }}</strong>.
+        Enter it below to see
+        {% if order_count == 1 %}your order{% else %}your {{ order_count }} orders{% endif %}.
+    </p>
+
+    <div class="detail-section">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="form-field">
+                <label for="code" class="required">6 digit code</label>
+                <input type="text" id="code" name="code" class="field-input"
+                       inputmode="numeric" maxlength="6" pattern="[0-9]*"
+                       placeholder="000000" autocomplete="one-time-code"
+                       autofocus required>
+                {% if errors.code %}<span class="field-error">{{ errors.code }}</span>{% endif %}
+            </div>
+            <button type="submit" class="btn" style="margin-top:1.25rem;">Show my orders</button>
+        </form>
+
+        <p class="summary-note">
+            No email yet? Check your spam folder, or
+            <a href="{% url 'website:track_order' %}">try a different order ID or number</a>.
+        </p>
+    </div>
+</div>
+{% endblock %}
