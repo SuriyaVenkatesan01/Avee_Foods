@@ -1125,16 +1125,31 @@
             outline-offset: 2px;
         }
 
+        /* How many images are in view at once. One on a phone, two on a
+           tablet, three on a desktop -- change --pdp-per-view and the slide
+           width, the snapping and the arrows all follow. */
+        .pdp-slides { --pdp-per-view: 1; }
+
+        @media (min-width: 600px) {
+            .pdp-slides { --pdp-per-view: 2; }
+        }
+
+        @media (min-width: 901px) {
+            .pdp-slides { --pdp-per-view: 3; }
+        }
+
         .pdp-slide {
-            flex: 0 0 95%;
+            flex: 0 0 calc(100% / var(--pdp-per-view));
             margin: 0;
-            scroll-snap-align: center;
+            /* `start`, not `center`: with several in view, centring leaves a
+               half slide hanging off both edges. */
+            scroll-snap-align: start;
             /* Every image occupies the same square whatever its own shape */
             aspect-ratio: 1 / 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: clamp(0.75rem, 2vw, 1.25rem);
+            padding: clamp(0.5rem, 1.5vw, 0.9rem);
         }
 
         .pdp-slide img {

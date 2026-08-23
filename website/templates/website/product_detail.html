@@ -414,12 +414,22 @@
             dots.forEach(function (dot, n) {
                 dot.classList.toggle('is-active', n === i);
             });
-            prev.hidden = i === 0;
-            next.hidden = i === slides.length - 1;
+            var atStart = track.scrollLeft <= 1;
+            var atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 1;
+            prev.hidden = atStart;
+            next.hidden = atEnd;
+            // Nothing to scroll: every slide already fits on screen
+            var fits = track.scrollWidth <= track.clientWidth + 1;
+            dotWrap.hidden = fits;
+            if (fits) { prev.hidden = true; next.hidden = true; }
         };
 
-        prev.addEventListener('click', function () { goTo(current() - 1); });
-        next.addEventListener('click', function () { goTo(current() + 1); });
+        var perView = function () {
+            return Math.max(1, Math.round(track.clientWidth / slides[0].offsetWidth));
+        };
+
+        prev.addEventListener('click', function () { goTo(current() - perView()); });
+        next.addEventListener('click', function () { goTo(current() + perView()); });
 
         track.addEventListener('keydown', function (e) {
             var step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
