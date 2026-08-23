@@ -204,7 +204,7 @@
                 {% endif %}
             </div>
 
-            <section class="pdp-panel" role="tabpanel" id="panel-about" aria-labelledby="tab-about">
+            <section class="pdp-panel" role="tabpanel" tabindex="0" id="panel-about" aria-labelledby="tab-about">
                 <div class="pdp-prose">
                     <p>{{ product.description|linebreaksbr }}</p>
                 </div>
@@ -229,7 +229,7 @@
             </section>
 
             {% if product.specifications or product.ingredients or product.storage %}
-                <section class="pdp-panel" role="tabpanel" id="panel-details" aria-labelledby="tab-details">
+                <section class="pdp-panel" role="tabpanel" tabindex="0" id="panel-details" aria-labelledby="tab-details">
                     {% if product.ingredients %}
                         <h3 class="pdp-subheading">Ingredients</h3>
                         <div class="pdp-prose"><p>{{ product.ingredients|join:", " }}</p></div>
@@ -259,7 +259,7 @@
             {% endif %}
 
             {% if product.nutrition.values %}
-                <section class="pdp-panel" role="tabpanel" id="panel-nutrition" aria-labelledby="tab-nutrition">
+                <section class="pdp-panel" role="tabpanel" tabindex="0" id="panel-nutrition" aria-labelledby="tab-nutrition">
                     <h3 class="pdp-subheading">
                         Nutrition
                         {% if product.nutrition.basis %}
