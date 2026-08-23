@@ -68,9 +68,6 @@
     <div class="detail-section">
         <div class="detail-grid">
             <!-- ============ IMAGES ============ -->
-            {# A scroll-snap track rather than a big image plus a thumbnail
-               strip: every slide is the same square, it swipes natively on a
-               phone, and it costs no extra row under the picture. #}
             <div class="detail-gallery">
                 {% if product.image or product.images.all %}
                     <div class="pdp-gallery" data-gallery>
@@ -153,12 +150,9 @@
                                     <span class="variant-body">
                                         <span class="variant-label">{{ variant.label }}</span>
                                         <span class="variant-meta">
-                                            {% if variant.unit_rate %}₹{{ variant.unit_rate|inr }}{{ variant.unit_rate_label }}{% endif %}
-                                            {% if not variant.in_stock %}
-                                                — <strong style="color:var(--accent);">Out of stock</strong>
-                                            {% elif product.stock_managed and variant.stock <= 5 %}
-                                                — <strong style="color:var(--amber);">Only {{ variant.stock }} left</strong>
-                                            {% endif %}
+                                            {% if not variant.in_stock %}<strong class="variant-flag out">Out of stock</strong>
+                                            {% elif product.stock_managed and variant.stock <= 5 %}<strong class="variant-flag low">Only {{ variant.stock }} left</strong>
+                                            {% elif variant.unit_rate %}₹{{ variant.unit_rate|inr }}{{ variant.unit_rate_label }}{% endif %}
                                         </span>
                                     </span>
                                     <span class="variant-price">
