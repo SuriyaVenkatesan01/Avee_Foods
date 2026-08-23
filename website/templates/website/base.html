@@ -1126,7 +1126,7 @@
         }
 
         .pdp-slide {
-            flex: 0 0 100%;
+            flex: 0 0 95%;
             margin: 0;
             scroll-snap-align: center;
             /* Every image occupies the same square whatever its own shape */
@@ -1623,6 +1623,9 @@
             flex-wrap: wrap;
             gap: 0.5rem;
             margin-bottom: 1.25rem;
+            /* Cards in a row match the tallest, so their borders line up even
+               when one carries a stock warning and another does not. */
+            align-items: stretch;
         }
 
         .variant-option {
@@ -1630,8 +1633,10 @@
             flex-direction: column;
             align-items: flex-start;
             gap: 0.15rem;
-            flex: 0 1 auto;
-            min-width: 104px;
+            /* Equal share of the row: sized to content they came out ragged,
+               a short "1 L" card next to a wide "250 ml" one. */
+            flex: 1 1 120px;
+            min-width: 0;
             border: 2px solid var(--border);
             border-radius: 10px;
             padding: 0.5rem 0.7rem;
@@ -1672,6 +1677,11 @@
 
         .variant-body {
             min-width: 0;
+            width: 100%;
+        }
+
+        .variant-option .variant-price {
+            margin-top: auto;
         }
 
         .variant-label {

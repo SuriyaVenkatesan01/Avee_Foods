@@ -376,13 +376,27 @@
         var dotWrap = gallery.querySelector('[data-gallery-dots]');
         var dots = [];
 
+        // Measure the slides rather than assuming one slide == one track width:
+        // the slide width is a percentage that can be tuned in the CSS, and
+        // anything other than 100% made the computed index drift.
+        var offsetOf = function (i) {
+            return slides[i].offsetLeft - track.offsetLeft;
+        };
+
         var current = function () {
-            return Math.round(track.scrollLeft / track.clientWidth);
+            var x = track.scrollLeft;
+            var best = 0;
+            var bestGap = Infinity;
+            slides.forEach(function (slide, i) {
+                var gap = Math.abs(offsetOf(i) - x);
+                if (gap < bestGap) { bestGap = gap; best = i; }
+            });
+            return best;
         };
 
         var goTo = function (i) {
             var index = Math.max(0, Math.min(slides.length - 1, i));
-            track.scrollTo({ left: index * track.clientWidth, behavior: 'smooth' });
+            track.scrollTo({ left: offsetOf(index), behavior: 'smooth' });
         };
 
         slides.forEach(function (slide, i) {
