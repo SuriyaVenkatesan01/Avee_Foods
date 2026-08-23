@@ -871,6 +871,56 @@
             color: var(--muted);
             background: #fafafa;
             white-space: nowrap;
+            font-family: inherit;
+            cursor: pointer;
+            /* Comfortable thumb target on a phone without making the pill
+               look chunky -- the box grows, the visible pill does not. */
+            min-height: 32px;
+            display: inline-flex;
+            align-items: center;
+            transition: border-color 0.15s, background 0.15s, color 0.15s;
+        }
+
+        .pack-chip:hover:not(:disabled) {
+            border-color: var(--accent);
+            color: var(--ink);
+        }
+
+        .pack-chip.is-selected {
+            border-color: var(--accent);
+            background: #fff6e0;
+            color: var(--on-accent);
+            font-weight: 700;
+        }
+
+        .pack-chip:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
+
+        .pack-chip:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        /* The whole card is one big link: this pseudo-element covers it, and
+           the controls below sit above it so they stay independently usable. */
+        .product-card .card-link::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+        }
+
+        .product-card .pack-chips,
+        .product-card .card-add {
+            position: relative;
+            z-index: 2;
+        }
+
+        .product-card .card-add {
+            margin-top: auto;
         }
 
         .ribbon {
@@ -3229,6 +3279,46 @@
                 var next = (parseInt(input.value, 10) || min) + step;
                 input.value = Math.max(min, Math.min(max, next));
                 input.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+
+            // Product card size chips: swap the pack without leaving the grid
+            document.addEventListener('click', function (e) {
+                var chip = e.target.closest('[data-pack-chip]');
+                if (!chip || chip.disabled) return;
+                e.preventDefault();
+
+                var card = chip.closest('.product-card');
+                if (!card) return;
+
+                card.querySelectorAll('[data-pack-chip]').forEach(function (other) {
+                    var on = other === chip;
+                    other.classList.toggle('is-selected', on);
+                    other.setAttribute('aria-pressed', on ? 'true' : 'false');
+                });
+
+                var d = chip.dataset;
+                var set = function (sel, value) {
+                    var el = card.querySelector(sel);
+                    if (el) el.textContent = value;
+                };
+
+                var input = card.querySelector('[data-card-variant-input]');
+                if (input) input.value = d.variant;
+
+                set('[data-card-add]', 'Add ' + d.label);
+                set('[data-card-price]', d.price);
+                set('[data-card-mrp]', d.mrp || '');
+                set('[data-card-unit]', d.label ? '/ ' + d.label : '');
+
+                // "From ..." only makes sense until a size is actually picked
+                var from = card.querySelector('[data-card-from]');
+                if (from) from.hidden = true;
+
+                var ribbon = card.querySelector('[data-card-ribbon]');
+                if (ribbon) {
+                    ribbon.textContent = d.discount || '';
+                    ribbon.hidden = !d.discount;
+                }
             });
 
             // Copy-to-clipboard for UPI ids and order numbers
