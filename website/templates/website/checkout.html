@@ -33,19 +33,12 @@
                         </span>
                     </div>
 
-                    <div class="form-field">
-                        <label for="alt_phone">Alternate number</label>
-                        <input type="tel" id="alt_phone" name="alt_phone" class="field-input"
-                               value="{{ data.alt_phone|default:'' }}" inputmode="numeric" maxlength="10"
-                               placeholder="Alternate number (optional)">
-                        {% if errors.alt_phone %}<span class="field-error">{{ errors.alt_phone }}</span>{% endif %}
-                    </div>
 
                     <div class="form-field">
-                        <label for="email">Email</label>
+                        <label for="email" class="required">Email</label>
                         <input type="email" id="email" name="email" class="field-input"
                                value="{{ data.email|default:'' }}"
-                               placeholder="For the order confirmation (optional)">
+                               placeholder="For your confirmation and tracking code" required>
                         {% if errors.email %}<span class="field-error">{{ errors.email }}</span>{% endif %}
                     </div>
                 </div>
@@ -67,12 +60,6 @@
                                placeholder="Area, locality (optional)">
                     </div>
 
-                    <div class="form-field">
-                        <label for="landmark">Landmark</label>
-                        <input type="text" id="landmark" name="landmark" class="field-input"
-                               value="{{ data.landmark|default:'' }}"
-                               placeholder="Near which landmark? (optional)">
-                    </div>
 
                     <div class="form-field">
                         <label for="city" class="required">City / town / village</label>
@@ -107,11 +94,6 @@
                         {% if errors.pincode %}<span class="field-error">{{ errors.pincode }}</span>{% endif %}
                     </div>
 
-                    <div class="form-field full">
-                        <label for="delivery_notes">Delivery instructions</label>
-                        <textarea id="delivery_notes" name="delivery_notes" rows="2"
-                                  placeholder="Delivery instructions (optional)">{{ data.delivery_notes|default:'' }}</textarea>
-                    </div>
                 </div>
 
                 <h2 class="section-title" style="font-size:1.2rem;">3. Payment method</h2>

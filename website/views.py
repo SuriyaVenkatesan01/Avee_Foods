@@ -88,16 +88,13 @@ def _validate_checkout(post, cart_total):
     data = {
         'full_name': (post.get('full_name') or '').strip(),
         'phone': _normalise_phone(post.get('phone')),
-        'alt_phone': _normalise_phone(post.get('alt_phone')),
         'email': (post.get('email') or '').strip(),
         'address_line1': (post.get('address_line1') or '').strip(),
         'address_line2': (post.get('address_line2') or '').strip(),
-        'landmark': (post.get('landmark') or '').strip(),
         'city': (post.get('city') or '').strip(),
         'district': (post.get('district') or '').strip(),
         'state': (post.get('state') or '').strip(),
         'pincode': (post.get('pincode') or '').strip(),
-        'delivery_notes': (post.get('delivery_notes') or '').strip(),
         'payment_method': (post.get('payment_method') or '').strip(),
     }
     errors = {}
@@ -107,9 +104,6 @@ def _validate_checkout(post, cart_total):
 
     if not PHONE_RE.match(data['phone']):
         errors['phone'] = 'Enter a valid 10 digit Indian mobile number.'
-
-    if data['alt_phone'] and not PHONE_RE.match(data['alt_phone']):
-        errors['alt_phone'] = 'Enter a valid 10 digit mobile number, or leave it blank.'
 
     if not data['email']:
         errors['email'] = (
@@ -457,7 +451,7 @@ def checkout(request):
                 data.update({
                     'full_name': last.full_name, 'phone': last.phone, 'email': last.email,
                     'address_line1': last.address_line1, 'address_line2': last.address_line2,
-                    'landmark': last.landmark, 'city': last.city, 'district': last.district,
+                    'city': last.city, 'district': last.district,
                     'state': last.state, 'pincode': last.pincode,
                 })
             else:

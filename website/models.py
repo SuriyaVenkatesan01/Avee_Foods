@@ -27,16 +27,7 @@ pincode_validator = RegexValidator(
 
 
 def unique_slug(model, value, instance=None, field='slug', fallback=''):
-    """Return a URL-safe slug for `value` that is unique across `model`.
-
-    Always run through slugify, never only when the slug is blank -- a hand
-    typed "groundnut oil" has to become "groundnut-oil" or every {% url %} that
-    points at the row blows up with NoReverseMatch.
-
-    Slugs stay ASCII on purpose: Django's <slug:...> converter only matches
-    [-a-zA-Z0-9_], so a Tamil slug would break URL reversing all over again.
-    When `value` slugifies to nothing, `fallback` (normally the name) is used.
-    """
+    
     base = slugify(value)[:180] or slugify(fallback)[:180] or 'item'
     slug = base
     counter = 2
@@ -48,14 +39,6 @@ def unique_slug(model, value, instance=None, field='slug', fallback=''):
         counter += 1
     return slug
 
-
-# ---------------------------------------------------------------------------
-# The `details` JSON contract
-# ---------------------------------------------------------------------------
-# `FoodProduct.details` holds all the structured copy that differs from product
-# to product. Keeping it as JSON means a new product type (say, honey or
-# millets) needs no migration -- fill the blocks that apply and leave the rest
-# out. Every block is optional; templates skip whatever is missing.
 
 PRODUCT_DETAILS_TEMPLATE = {
     "highlights": [
