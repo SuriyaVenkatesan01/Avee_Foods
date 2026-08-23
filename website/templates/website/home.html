@@ -71,7 +71,9 @@
         <h2 class="section-title" id="our-products-heading">Our Products</h2>
         <div class="category-filter-grid" aria-label="Filter products by category">
             <button type="button" class="category-filter active" data-category-filter="all" aria-pressed="true">
-                <span class="category-filter-icon">&#9670;</span><span>All</span>
+                <span class="category-filter-icon">
+                    <img src="{% static 'img/icon/all.png' %}" alt="" loading="lazy" decoding="async">
+                </span><span>All</span>
             </button>
             {% comment %}
                 Icon comes from static/img/icon/cat-<slug>.png when that file

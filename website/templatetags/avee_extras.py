@@ -50,12 +50,31 @@ def get_item(mapping, key):
     return ''
 
 
+# Artwork already in static/img/icon/ that suits a category whose slug does not
+# match a filename. Matched on substring, so "chili-poweder" and "red-chilli"
+# both land on spices.png without needing an exact spelling.
+CATEGORY_ICON_KEYWORDS = (
+    ('chil', 'spices'),
+    ('spice', 'spices'),
+    ('masala', 'spices'),
+    ('powder', 'spices'),
+    ('oil', 'oil'),
+    ('honey', 'honey'),
+    ('ghee', 'ghee'),
+    ('nut', 'basket'),
+    ('water', 'water'),
+)
+
+
 @register.filter
 def category_icon(category):
-    """URL of a category's PNG icon, or '' when no artwork has been added.
+    """URL of a category's PNG icon, or '' when no artwork fits.
 
-    Name the file after the category slug -- static/img/icon/cat-<slug>.png --
-    and it appears on its own, no code change needed for a new category.
+    Tried in order, first hit wins:
+      1. static/img/icon/cat-<slug>.png  -- drop a file in, no code change
+      2. static/img/icon/<slug>.png      -- matches the icons already shipped
+      3. a keyword match from CATEGORY_ICON_KEYWORDS
+
     Returning '' rather than a URL lets the template fall back to the emoji
     icon field instead of rendering a broken image.
 
@@ -63,8 +82,18 @@ def category_icon(category):
     would mean a newly dropped-in PNG stays invisible until the server is
     restarted, which is a confusing way for this to fail.
     """
-    slug = getattr(category, 'slug', '') or ''
+    slug = (getattr(category, 'slug', '') or '').lower()
     if not slug:
         return ''
-    path = f'img/icon/cat-{slug}.png'
-    return static(path) if finders.find(path) else ''
+
+    candidates = [f'cat-{slug}', slug]
+    for keyword, icon in CATEGORY_ICON_KEYWORDS:
+        if keyword in slug:
+            candidates.append(icon)
+            break
+
+    for name in candidates:
+        path = f'img/icon/{name}.png'
+        if finders.find(path):
+            return static(path)
+    return ''
