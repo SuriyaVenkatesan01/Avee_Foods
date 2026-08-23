@@ -11,6 +11,7 @@
         <div class="detail-section" style="margin-bottom:2rem;">
             {% if category.image %}
                 <img src="{{ category.image.url }}" alt="{{ category.name }}"
+                     fetchpriority="high" decoding="async"
                      style="width:100%; height:clamp(180px, 30vw, 300px); object-fit:cover;
                             border-radius:8px; margin-bottom:1rem;">
             {% endif %}

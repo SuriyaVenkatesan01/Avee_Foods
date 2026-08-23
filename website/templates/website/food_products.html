@@ -1,6 +1,7 @@
 {% extends 'website/base.html' %}
 
-{% block title %}{% if category %}{{ category.name }}{% else %}All Products{% endif %} - Avee Foods{% endblock %}
+{% block title %}{% if category %}{{ category.name }}{% else %}Buy Cold Pressed & Wood Pressed Oils{% endif %} - Avee Foods{% endblock %}
+{% block meta_description %}{% if category %}Buy {{ category.name|lower }} from Avee Foods -- cold pressed, chemical free and delivered across India.{% else %}Buy cold pressed and wood pressed groundnut, coconut and sesame oil online. Chemical free, farm sourced, delivered across India.{% endif %}{% endblock %}
 
 {% block content %}
 <div class="container page-centered">

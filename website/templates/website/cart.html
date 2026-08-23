@@ -2,6 +2,7 @@
 {% load avee_extras %}
 
 {% block title %}Your Cart - Avee Foods{% endblock %}
+{% block meta_robots %}noindex, nofollow{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -23,7 +24,8 @@
                     <div class="cart-line">
                         <a href="{{ item.variant.product.get_absolute_url }}">
                             {% if item.variant.product.image %}
-                                <img src="{{ item.variant.product.image.url }}" alt="{{ item.variant.product.name }}" class="cart-line-img">
+                                <img src="{{ item.variant.product.image.url }}" alt="{{ item.variant.product.name }}" class="cart-line-img"
+                                     loading="lazy" decoding="async">
                             {% else %}
                                 <div class="cart-line-img"></div>
                             {% endif %}

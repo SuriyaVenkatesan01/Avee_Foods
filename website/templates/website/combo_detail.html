@@ -9,7 +9,8 @@
         <div class="detail-grid">
             <div>
                 {% if combo.image %}
-                    <img src="{{ combo.image.url }}" alt="{{ combo.name }}" class="detail-image">
+                    <img src="{{ combo.image.url }}" alt="{{ combo.name }}" class="detail-image"
+                         fetchpriority="high" decoding="async">
                 {% else %}
                     <div class="product-image detail-image-placeholder">No Image</div>
                 {% endif %}

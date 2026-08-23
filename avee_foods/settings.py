@@ -54,6 +54,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # Ships the sitemap.xml template used by /sitemap.xml
+    "django.contrib.sitemaps",
     "website",
     "dashboard",
 ]

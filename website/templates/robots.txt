@@ -1,0 +1,16 @@
+User-agent: *
+
+# Private and transactional pages -- nothing to index, and crawling them
+# just burns crawl budget on pages that need a session to make sense.
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /pay/
+Disallow: /order/
+Disallow: /track/
+Disallow: /my-orders/
+Disallow: /dashboard/
+Disallow: /admin/
+
+Allow: /
+
+Sitemap: {{ request.scheme }}://{{ request.get_host }}/sitemap.xml

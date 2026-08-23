@@ -1,6 +1,7 @@
 {% extends 'website/base.html' %}
 
-{% block title %}Gallery - Avee Foods{% endblock %}
+{% block title %}Our Chekku Oil Mill in Pictures - Avee Foods{% endblock %}
+{% block meta_description %}Photos from the Avee Foods wood pressed oil mill -- the marachekku, the groundnut and the bottling, exactly as it happens.{% endblock %}
 
 {% block content %}
 <div class="container page-centered">
@@ -13,7 +14,7 @@
                 <div class="gallery-item">
                     <div class="gallery-image">
                         {% if image.image %}
-                            <img src="{{ image.image.url }}" alt="{{ image.title }}">
+                            <img src="{{ image.image.url }}" alt="{{ image.title }}" loading="lazy" decoding="async">
                         {% else %}
                             <span>No Image</span>
                         {% endif %}

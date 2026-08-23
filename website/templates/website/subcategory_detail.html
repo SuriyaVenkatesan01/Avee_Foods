@@ -31,6 +31,7 @@
     {% if subcategory.image %}
         <div class="detail-section" style="margin-bottom:2rem;">
             <img src="{{ subcategory.image.url }}" alt="{{ subcategory.name }}"
+                 fetchpriority="high" decoding="async"
                  style="width:100%; height:clamp(180px, 30vw, 300px); object-fit:cover; border-radius:8px;">
         </div>
     {% endif %}

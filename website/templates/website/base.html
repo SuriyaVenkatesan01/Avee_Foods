@@ -28,6 +28,9 @@
     <link rel="icon" href="{% static 'img/favicon.ico' %}" sizes="any">
     <link rel="icon" type="image/png" href="{% static 'img/favicon-32.png' %}" sizes="32x32">
     <link rel="apple-touch-icon" href="{% static 'img/favicon-180.png' %}">
+
+    {# Per-page structured data (Product, Breadcrumb) goes here #}
+    {% block head_extra %}{% endblock %}
     <style>
         :root {
             /* Palette taken from the logo: forest green, golden oil drop, cream.

@@ -3,6 +3,53 @@
 
 {% block title %}{{ product.name }} - Avee Foods{% endblock %}
 {% block meta_description %}{{ product.short_description|default:product.description|truncatewords:25 }}{% endblock %}
+{% block og_type %}product{% endblock %}
+{% block og_title %}{{ product.name }} - Avee Foods{% endblock %}
+{% block og_description %}{{ product.short_description|default:product.description|truncatewords:25 }}{% endblock %}
+{% block twitter_title %}{{ product.name }} - Avee Foods{% endblock %}
+{% block twitter_description %}{{ product.short_description|default:product.description|truncatewords:25 }}{% endblock %}
+{% block og_image %}{% if product.image %}{{ request.scheme }}://{{ request.get_host }}{{ product.image.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% load static %}{% static 'img/logo-192.png' %}{% endif %}{% endblock %}
+
+{% block head_extra %}
+{# Product schema -- puts the price and stock status straight into Google #}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "{{ product.name|escapejs }}",
+  "description": "{{ product.short_description|default:product.description|striptags|truncatewords:40|escapejs }}",
+  "sku": "{% if product.default_variant %}{{ product.default_variant.sku|escapejs }}{% endif %}",
+  "brand": {"@type": "Brand", "name": "{{ store.name|escapejs }}"},
+  {% if product.image %}"image": ["{{ request.scheme }}://{{ request.get_host }}{{ product.image.url }}"],{% endif %}
+  {% if product.category %}"category": "{{ product.category.name|escapejs }}",{% endif %}
+  "offers": {
+    "@type": "AggregateOffer",
+    "priceCurrency": "INR",
+    "offerCount": {{ product.active_variants|length }},
+    "lowPrice": "{{ product.display_price }}",
+    "availability": "https://schema.org/{% if product.in_stock %}InStock{% else %}OutOfStock{% endif %}",
+    "url": "{{ request.scheme }}://{{ request.get_host }}{{ product.get_absolute_url }}",
+    "seller": {"@type": "Organization", "name": "{{ store.name|escapejs }}"}
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "Home",
+     "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'website:home' %}"},
+    {"@type": "ListItem", "position": 2, "name": "Products",
+     "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'website:food_products' %}"}{% if product.category %},
+    {"@type": "ListItem", "position": 3, "name": "{{ product.category.name|escapejs }}",
+     "item": "{{ request.scheme }}://{{ request.get_host }}{{ product.category.get_absolute_url }}"}{% endif %},
+    {"@type": "ListItem", "position": {% if product.category %}4{% else %}3{% endif %},
+     "name": "{{ product.name|escapejs }}"}
+  ]
+}
+</script>
+{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -23,7 +70,8 @@
             <!-- ============ IMAGES ============ -->
             <div>
                 {% if product.image %}
-                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="detail-image" id="main-image">
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="detail-image" id="main-image"
+                         fetchpriority="high" decoding="async">
                 {% else %}
                     <div class="product-image detail-image-placeholder">No Image</div>
                 {% endif %}
@@ -31,7 +79,8 @@
                 {% if product.images.all %}
                     <div class="thumb-row">
                         {% if product.image %}
-                            <img src="{{ product.image.url }}" alt="{{ product.name }}" data-full="{{ product.image.url }}">
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}" data-full="{{ product.image.url }}"
+                                 loading="lazy" decoding="async">
                         {% endif %}
                         {% for extra in product.images.all %}
                             <img src="{{ extra.image.url }}" alt="{{ extra.alt_text|default:product.name }}" data-full="{{ extra.image.url }}">
