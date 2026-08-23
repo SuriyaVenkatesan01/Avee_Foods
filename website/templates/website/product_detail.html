@@ -68,25 +68,37 @@
     <div class="detail-section">
         <div class="detail-grid">
             <!-- ============ IMAGES ============ -->
+            {# A scroll-snap track rather than a big image plus a thumbnail
+               strip: every slide is the same square, it swipes natively on a
+               phone, and it costs no extra row under the picture. #}
             <div class="detail-gallery">
-                {% if product.image %}
-                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="detail-image" id="main-image"
-                         fetchpriority="high" decoding="async">
+                {% if product.image or product.images.all %}
+                    <div class="pdp-gallery" data-gallery>
+                        <div class="pdp-slides" data-gallery-track tabindex="0"
+                             role="group" aria-label="{{ product.name }} images">
+                            {% if product.image %}
+                                <figure class="pdp-slide">
+                                    <img src="{{ product.image.url }}" alt="{{ product.name }}"
+                                         fetchpriority="high" decoding="async">
+                                </figure>
+                            {% endif %}
+                            {% for extra in product.images.all %}
+                                <figure class="pdp-slide">
+                                    <img src="{{ extra.image.url }}"
+                                         alt="{{ extra.alt_text|default:product.name }}"
+                                         loading="lazy" decoding="async">
+                                </figure>
+                            {% endfor %}
+                        </div>
+
+                        <button type="button" class="pdp-gnav pdp-gprev" data-gallery-prev
+                                aria-label="Previous image" hidden>&#8249;</button>
+                        <button type="button" class="pdp-gnav pdp-gnext" data-gallery-next
+                                aria-label="Next image" hidden>&#8250;</button>
+                        <div class="pdp-dots" data-gallery-dots></div>
+                    </div>
                 {% else %}
                     <div class="product-image detail-image-placeholder">No Image</div>
-                {% endif %}
-
-                {% if product.images.all %}
-                    <div class="thumb-row">
-                        {% if product.image %}
-                            <img src="{{ product.image.url }}" alt="{{ product.name }}" data-full="{{ product.image.url }}"
-                                 class="is-active" loading="lazy" decoding="async">
-                        {% endif %}
-                        {% for extra in product.images.all %}
-                            <img src="{{ extra.image.url }}" alt="{{ extra.alt_text|default:product.name }}" data-full="{{ extra.image.url }}"
-                                 loading="lazy" decoding="async">
-                        {% endfor %}
-                    </div>
                 {% endif %}
             </div>
 
@@ -207,9 +219,6 @@
         </div>
 
         <!-- ============ TABBED DETAIL ============ -->
-        {# One long column of headings made this page a marathon. The same
-           content is grouped into three tabs; without JavaScript every panel
-           simply stays open, so nothing is ever unreachable. #}
         <div class="pdp-tabs" data-pdp-tabs>
             <div class="pdp-tablist" role="tablist" aria-label="Product information">
                 <button type="button" class="pdp-tab" role="tab" id="tab-about"
@@ -381,20 +390,67 @@
         });
     })();
 
-    // Thumbnail click swaps the main image and marks which one is showing
+    // Image slider. The track is a native scroll-snap strip, so swipe works
+    // with no JS at all; this only adds arrows, dots and keyboard support.
     (function () {
-        var main = document.getElementById('main-image');
-        if (!main) return;
-        var thumbs = document.querySelectorAll('.thumb-row img');
-        thumbs.forEach(function (thumb) {
-            thumb.addEventListener('click', function () {
-                main.src = thumb.dataset.full || thumb.src;
-                main.alt = thumb.alt || main.alt;
-                thumbs.forEach(function (other) {
-                    other.classList.toggle('is-active', other === thumb);
-                });
-            });
+        var gallery = document.querySelector('[data-gallery]');
+        if (!gallery) return;
+
+        var track = gallery.querySelector('[data-gallery-track]');
+        var slides = Array.prototype.slice.call(gallery.querySelectorAll('.pdp-slide'));
+        if (!track || slides.length < 2) return;   // one image needs no controls
+
+        var prev = gallery.querySelector('[data-gallery-prev]');
+        var next = gallery.querySelector('[data-gallery-next]');
+        var dotWrap = gallery.querySelector('[data-gallery-dots]');
+        var dots = [];
+
+        var current = function () {
+            return Math.round(track.scrollLeft / track.clientWidth);
+        };
+
+        var goTo = function (i) {
+            var index = Math.max(0, Math.min(slides.length - 1, i));
+            track.scrollTo({ left: index * track.clientWidth, behavior: 'smooth' });
+        };
+
+        slides.forEach(function (slide, i) {
+            var dot = document.createElement('button');
+            dot.type = 'button';
+            dot.className = 'pdp-dot';
+            dot.setAttribute('aria-label', 'Image ' + (i + 1) + ' of ' + slides.length);
+            dot.addEventListener('click', function () { goTo(i); });
+            dotWrap.appendChild(dot);
+            dots.push(dot);
         });
+
+        var sync = function () {
+            var i = current();
+            dots.forEach(function (dot, n) {
+                dot.classList.toggle('is-active', n === i);
+            });
+            prev.hidden = i === 0;
+            next.hidden = i === slides.length - 1;
+        };
+
+        prev.addEventListener('click', function () { goTo(current() - 1); });
+        next.addEventListener('click', function () { goTo(current() + 1); });
+
+        track.addEventListener('keydown', function (e) {
+            var step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+            if (!step) return;
+            e.preventDefault();
+            goTo(current() + step);
+        });
+
+        var pending;
+        track.addEventListener('scroll', function () {
+            window.clearTimeout(pending);
+            pending = window.setTimeout(sync, 60);
+        });
+        window.addEventListener('resize', sync);
+        sync();
     })();
+
 </script>
 {% endblock %}
