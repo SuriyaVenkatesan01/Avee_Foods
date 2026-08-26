@@ -32,25 +32,26 @@ SECRET_KEY = os.environ.get(
     "django-insecure-*q=mhbtmxdt34^0pp38w@@fc+y1g_1el1!255!ktl%&e(*lc%$",
 )
 
-# Render sets RENDER=true and Vercel sets VERCEL=1 in the runtime environment.
-# Either one means "this is a real deployment", which is what the safety
-# defaults below key off -- so a local checkout needs no env vars at all.
-IS_DEPLOYED = bool(
-    os.environ.get("RENDER")
-    or os.environ.get("VERCEL")
-    or os.environ.get("DJANGO_DEPLOYED")
-)
+# Load a local .env if one is present. It is gitignored, so it exists only on
+# developer machines and can never reach a server -- which is what makes it
+# safe to use as the "this is a local run" signal below. Hand-rolled because
+# it is eight lines and saves a dependency.
+_ENV_FILE = BASE_DIR / ".env"
+if _ENV_FILE.exists():
+    for _line in _ENV_FILE.read_text(encoding="utf-8").splitlines():
+        _line = _line.strip()
+        if not _line or _line.startswith("#") or "=" not in _line:
+            continue
+        _k, _, _v = _line.partition("=")
+        os.environ.setdefault(_k.strip(), _v.strip().strip("\"'"))
 
-# Debug follows the environment: on locally, off once deployed. A deployed
-# instance with DEBUG=True serves full tracebacks (settings, paths, SQL) to the
-# public. DJANGO_DEBUG overrides in either direction when you need it to.
-_DEBUG_OVERRIDE = os.environ.get("DJANGO_DEBUG", "").lower()
-if _DEBUG_OVERRIDE in ("1", "true", "yes"):
-    DEBUG = True
-elif _DEBUG_OVERRIDE in ("0", "false", "no"):
-    DEBUG = False
-else:
-    DEBUG = not IS_DEPLOYED
+# Debug is OFF unless something explicitly turns it on. This defaults the safe
+# way on purpose: an earlier version keyed this off a host-provided variable
+# (RENDER/VERCEL), and when the host did not expose that variable at runtime
+# the check silently fell through to DEBUG=True, serving full tracebacks --
+# settings, file paths, SQL -- to the public internet. Absence of config must
+# mean "assume production", never "assume local".
+DEBUG = os.environ.get("DJANGO_DEBUG", "").lower() in ("1", "true", "yes")
 
 ALLOWED_HOSTS = [
     "aveefoods.in",
@@ -71,7 +72,7 @@ CSRF_TRUSTED_ORIGINS = [
 # knows the original request was https from this header. Without it
 # request.is_secure() is False and the secure-cookie settings below never
 # apply. Only trust it when deployed -- locally the header is forgeable.
-if IS_DEPLOYED:
+if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
@@ -136,11 +137,12 @@ _DATABASE_URL = os.environ.get("DATABASE_URL", "")
 # gitignored (so it is not in the bundle) and serverless filesystems are
 # read-only, which surfaces as a bare "unable to open database file" on the
 # first write. Fail at startup with a message that says what to fix instead.
-if not _DATABASE_URL and IS_DEPLOYED:
+if not _DATABASE_URL and not DEBUG:
     raise ImproperlyConfigured(
         "DATABASE_URL is not set. A deployed instance needs a Postgres URL; "
         "the sqlite fallback only exists for local development. Set "
-        "DATABASE_URL in the Render service's Environment settings."
+        "DATABASE_URL in the host's environment settings. For a local run, "
+        "create a .env file containing DJANGO_DEBUG=1 (see .env.example)."
     )
 
 DATABASES = {
