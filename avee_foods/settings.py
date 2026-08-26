@@ -14,6 +14,7 @@ from decimal import Decimal
 import os
 
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -23,11 +24,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-*q=mhbtmxdt34^0pp38w@@fc+y1g_1el1!255!ktl%&e(*lc%$"
+# Secret key comes from the environment in production. The literal below is a
+# throwaway for local work only -- it is public in git history, so never let a
+# deployed instance fall back to it.
+SECRET_KEY = os.environ.get(
+    "DJANGO_SECRET_KEY",
+    "django-insecure-*q=mhbtmxdt34^0pp38w@@fc+y1g_1el1!255!ktl%&e(*lc%$",
+)
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Debug is off unless DJANGO_DEBUG is explicitly turned on. A deployed instance
+# with DEBUG=True serves full tracebacks (settings, paths, SQL) to the public.
+DEBUG = os.environ.get("DJANGO_DEBUG", "").lower() in ("1", "true", "yes")
 
 ALLOWED_HOSTS = [
     "aveefoods.in",
@@ -96,9 +103,21 @@ WSGI_APPLICATION = "avee_foods.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-# Postgres in production (Render sets DATABASE_URL), sqlite locally.
+# Postgres in production, sqlite locally.
 # sslmode only applies to Postgres -- sqlite rejects it as a connect kwarg.
 _DATABASE_URL = os.environ.get("DATABASE_URL", "")
+
+# Falling back to sqlite on a deployed host is never right: the file is
+# gitignored (so it is not in the bundle) and serverless filesystems are
+# read-only, which surfaces as a bare "unable to open database file" on the
+# first write. Fail at startup with a message that says what to fix instead.
+if not _DATABASE_URL and not DEBUG:
+    raise ImproperlyConfigured(
+        "DATABASE_URL is not set. A deployed instance needs a Postgres URL; "
+        "the sqlite fallback only exists for local development. Set "
+        "DATABASE_URL in the host's environment settings, or set "
+        "DJANGO_DEBUG=1 if this really is a local run."
+    )
 
 DATABASES = {
     "default": dj_database_url.config(
