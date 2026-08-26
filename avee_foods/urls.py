@@ -23,8 +23,11 @@ from django.views.generic import TemplateView
 from django.views.static import serve
 
 from website.sitemaps import SITEMAPS
+from avee_foods.health import healthz
 
 urlpatterns = [
+    # Reports the running instance's config; see avee_foods/health.py.
+    path("healthz/", healthz, name="healthz"),
     path("admin/", admin.site.urls),
     path("dashboard/", include("dashboard.urls")),
     # Search engines
