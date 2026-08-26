@@ -21,21 +21,12 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
-
-# Secret key comes from the environment in production. The literal below is a
-# throwaway for local work only -- it is public in git history, so never let a
-# deployed instance fall back to it.
 SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY",
     "django-insecure-*q=mhbtmxdt34^0pp38w@@fc+y1g_1el1!255!ktl%&e(*lc%$",
 )
 
-# Load a local .env if one is present. It is gitignored, so it exists only on
-# developer machines and can never reach a server -- which is what makes it
-# safe to use as the "this is a local run" signal below. Hand-rolled because
-# it is eight lines and saves a dependency.
+
 _ENV_FILE = BASE_DIR / ".env"
 if _ENV_FILE.exists():
     for _line in _ENV_FILE.read_text(encoding="utf-8").splitlines():
@@ -45,12 +36,7 @@ if _ENV_FILE.exists():
         _k, _, _v = _line.partition("=")
         os.environ.setdefault(_k.strip(), _v.strip().strip("\"'"))
 
-# Debug is OFF unless something explicitly turns it on. This defaults the safe
-# way on purpose: an earlier version keyed this off a host-provided variable
-# (RENDER/VERCEL), and when the host did not expose that variable at runtime
-# the check silently fell through to DEBUG=True, serving full tracebacks --
-# settings, file paths, SQL -- to the public internet. Absence of config must
-# mean "assume production", never "assume local".
+
 DEBUG = os.environ.get("DJANGO_DEBUG", "").lower() in ("1", "true", "yes")
 
 ALLOWED_HOSTS = [
@@ -61,17 +47,36 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
 ]
 
-# Render terminates TLS, so POST forms need the https origins trusted
+# Hosts assign each deployment a generated hostname that cannot be hardcoded
+# because it changes on every deploy (Vercel) or is chosen at service-creation
+# time (Render). Read whichever the current host advertises, plus anything
+# listed in DJANGO_ALLOWED_HOSTS as a comma-separated escape hatch.
+for _var in (
+    "VERCEL_URL",                    # this deployment, e.g. avee-foods-abc123.vercel.app
+    "VERCEL_BRANCH_URL",             # the branch alias
+    "VERCEL_PROJECT_PRODUCTION_URL",  # the project's production alias
+    "RENDER_EXTERNAL_HOSTNAME",      # e.g. avee-foods.onrender.com
+):
+    _host = os.environ.get(_var, "").strip()
+    # These arrive as bare hostnames, but strip a scheme defensively in case a
+    # full URL is pasted in by hand.
+    _host = _host.split("://", 1)[-1].split("/", 1)[0]
+    if _host and _host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(_host)
+
+for _host in os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(","):
+    _host = _host.strip()
+    if _host and _host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(_host)
+
+# The proxy terminates TLS, so POST forms need the https origins trusted.
+# Every allowed host is reachable over https once deployed; localhost is not,
+# and Django rejects a bare hostname here, so build these from the list above.
 CSRF_TRUSTED_ORIGINS = [
-    "https://aveefoods.in",
-    "https://www.aveefoods.in",
-    "https://avee-foods.onrender.com",
+    f"https://{_h}" for _h in ALLOWED_HOSTS if _h not in ("localhost", "127.0.0.1")
 ]
 
-# Render's proxy terminates TLS and forwards over plain HTTP, so Django only
-# knows the original request was https from this header. Without it
-# request.is_secure() is False and the secure-cookie settings below never
-# apply. Only trust it when deployed -- locally the header is forgeable.
+
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SESSION_COOKIE_SECURE = True
