@@ -196,3 +196,7 @@ logs/
 
 # Django collected static (built on deploy)
 staticfiles/
+
+# Data export for migrating to Postgres -- contains password hashes and
+# customer order records. Never commit this.
+seed.json
