@@ -32,9 +32,25 @@ SECRET_KEY = os.environ.get(
     "django-insecure-*q=mhbtmxdt34^0pp38w@@fc+y1g_1el1!255!ktl%&e(*lc%$",
 )
 
-# Debug is off unless DJANGO_DEBUG is explicitly turned on. A deployed instance
-# with DEBUG=True serves full tracebacks (settings, paths, SQL) to the public.
-DEBUG = os.environ.get("DJANGO_DEBUG", "").lower() in ("1", "true", "yes")
+# Render sets RENDER=true and Vercel sets VERCEL=1 in the runtime environment.
+# Either one means "this is a real deployment", which is what the safety
+# defaults below key off -- so a local checkout needs no env vars at all.
+IS_DEPLOYED = bool(
+    os.environ.get("RENDER")
+    or os.environ.get("VERCEL")
+    or os.environ.get("DJANGO_DEPLOYED")
+)
+
+# Debug follows the environment: on locally, off once deployed. A deployed
+# instance with DEBUG=True serves full tracebacks (settings, paths, SQL) to the
+# public. DJANGO_DEBUG overrides in either direction when you need it to.
+_DEBUG_OVERRIDE = os.environ.get("DJANGO_DEBUG", "").lower()
+if _DEBUG_OVERRIDE in ("1", "true", "yes"):
+    DEBUG = True
+elif _DEBUG_OVERRIDE in ("0", "false", "no"):
+    DEBUG = False
+else:
+    DEBUG = not IS_DEPLOYED
 
 ALLOWED_HOSTS = [
     "aveefoods.in",
@@ -50,6 +66,15 @@ CSRF_TRUSTED_ORIGINS = [
     "https://www.aveefoods.in",
     "https://avee-foods.onrender.com",
 ]
+
+# Render's proxy terminates TLS and forwards over plain HTTP, so Django only
+# knows the original request was https from this header. Without it
+# request.is_secure() is False and the secure-cookie settings below never
+# apply. Only trust it when deployed -- locally the header is forgeable.
+if IS_DEPLOYED:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 
 # Application definition
@@ -111,12 +136,11 @@ _DATABASE_URL = os.environ.get("DATABASE_URL", "")
 # gitignored (so it is not in the bundle) and serverless filesystems are
 # read-only, which surfaces as a bare "unable to open database file" on the
 # first write. Fail at startup with a message that says what to fix instead.
-if not _DATABASE_URL and not DEBUG:
+if not _DATABASE_URL and IS_DEPLOYED:
     raise ImproperlyConfigured(
         "DATABASE_URL is not set. A deployed instance needs a Postgres URL; "
         "the sqlite fallback only exists for local development. Set "
-        "DATABASE_URL in the host's environment settings, or set "
-        "DJANGO_DEBUG=1 if this really is a local run."
+        "DATABASE_URL in the Render service's Environment settings."
     )
 
 DATABASES = {
@@ -177,8 +201,12 @@ STORAGES = {
 }
 
 # Media files (User uploads)
+# MEDIA_ROOT is env-configurable so a deployed instance can point it at a
+# persistent disk. Uploads written to an ephemeral container filesystem are
+# lost on every restart and redeploy, so on Render this must match the disk's
+# mount path (see render.yaml).
 MEDIA_URL = "media/"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT = Path(os.environ.get("DJANGO_MEDIA_ROOT", BASE_DIR / "media"))
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

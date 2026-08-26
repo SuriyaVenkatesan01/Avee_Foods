@@ -17,10 +17,10 @@ Including another URLconf
 
 from django.contrib import admin
 from django.contrib.sitemaps.views import sitemap
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf import settings
-from django.conf.urls.static import static
 from django.views.generic import TemplateView
+from django.views.static import serve
 
 from website.sitemaps import SITEMAPS
 
@@ -35,6 +35,17 @@ urlpatterns = [
     path("", include("website.urls")),
 ]
 
-# Serve media files during development
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve user uploads (product/gallery images) in every environment.
+#
+# WhiteNoise only handles STATIC_ROOT, and django.conf.urls.static.static() is
+# a no-op once DEBUG is off -- so without this, every uploaded image 404s in
+# production. Serving through Django is slower than a real file server, but
+# this storefront's media volume is small and the files live on Render's
+# persistent disk. Move to a CDN/object store if image traffic grows.
+urlpatterns += [
+    re_path(
+        r"^%s(?P<path>.*)$" % settings.MEDIA_URL.lstrip("/"),
+        serve,
+        {"document_root": settings.MEDIA_ROOT},
+    ),
+]
