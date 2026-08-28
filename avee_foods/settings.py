@@ -11,11 +11,11 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from decimal import Decimal
+from pathlib import Path
 import os
+import warnings
 
 import dj_database_url
-from django.core.exceptions import ImproperlyConfigured
-from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -145,29 +145,40 @@ WSGI_APPLICATION = "avee_foods.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-# Postgres in production, sqlite locally.
 # sslmode only applies to Postgres -- sqlite rejects it as a connect kwarg.
 _DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
-# Falling back to sqlite on a deployed host is never right: the file is
-# gitignored (so it is not in the bundle) and serverless filesystems are
-# read-only, which surfaces as a bare "unable to open database file" on the
-# first write. Fail at startup with a message that says what to fix instead.
-if not _DATABASE_URL and not DEBUG:
-    raise ImproperlyConfigured(
-        "DATABASE_URL is not set. A deployed instance needs a Postgres URL; "
-        "the sqlite fallback only exists for local development. Set "
-        "DATABASE_URL in the host's environment settings. For a local run, "
-        "create a .env file containing DJANGO_DEBUG=1 (see .env.example)."
-    )
+_MISSING_DATABASE_URL = (
+    "DATABASE_URL is not set. A deployed instance needs a Postgres URL; the "
+    "sqlite fallback only exists for local development. Set DATABASE_URL in "
+    "the host's environment settings, for every environment the deploy runs "
+    "in. For a local run, create a .env file containing DJANGO_DEBUG=1 "
+    "(see .env.example)."
+)
 
-DATABASES = {
-    "default": dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-        conn_max_age=600,
-        ssl_require=_DATABASE_URL.startswith(("postgres://", "postgresql://")),
-    )
-}
+if _DATABASE_URL or DEBUG:
+    # Postgres in production, sqlite locally.
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+            conn_max_age=600,
+            ssl_require=_DATABASE_URL.startswith(("postgres://", "postgresql://")),
+        )
+    }
+else:
+    # Deployed with no database configured. Falling back to sqlite here is
+    # never right -- the file is gitignored, so it is not in the bundle, and a
+    # serverless filesystem is read-only, which surfaces as a bare "unable to
+    # open database file" on the first write.
+    #
+    # Raising is wrong too: the build step imports this module to collect
+    # static files, before any database is reachable, so a hard failure turns
+    # a missing variable into a failed build with no site at all. The dummy
+    # backend is the honest middle -- the build completes, /healthz/ still
+    # answers and reports the misconfiguration, and any real query fails
+    # loudly instead of silently writing somewhere it should not.
+    warnings.warn(_MISSING_DATABASE_URL, RuntimeWarning, stacklevel=1)
+    DATABASES = {"default": {"ENGINE": "django.db.backends.dummy"}}
 
 
 # Password validation

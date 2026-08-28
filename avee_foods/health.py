@@ -28,7 +28,7 @@ def _commit():
 
 
 def healthz(request):
-    engine = settings.DATABASES["default"]["ENGINE"].rsplit(".", 1)[-1]
+    engine = settings.DATABASES["default"].get("ENGINE", "").rsplit(".", 1)[-1]
     return JsonResponse(
         {
             "commit": _commit(),
@@ -36,9 +36,10 @@ def healthz(request):
             # Whether the variable is present, never its value.
             "database_url_set": bool(os.environ.get("DATABASE_URL", "").strip()),
             "db_engine": engine,
-            # sqlite on a deployed host is always wrong: the file is gitignored
-            # and the filesystem is read-only.
-            "db_ok": engine != "sqlite3",
+            # sqlite on a deployed host is always wrong: the file is
+            # gitignored and the filesystem is read-only. "dummy" means
+            # DATABASE_URL was missing when this instance booted.
+            "db_ok": engine not in ("sqlite3", "dummy", ""),
             "allowed_hosts": settings.ALLOWED_HOSTS,
             "media_root": str(settings.MEDIA_ROOT),
             "host_env": {
