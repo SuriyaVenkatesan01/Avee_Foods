@@ -39,18 +39,21 @@ if _ENV_FILE.exists():
 
 DEBUG = os.environ.get("DJANGO_DEBUG", "").lower() in ("1", "true", "yes")
 
+# A leading dot matches the domain itself and every subdomain under it, so
+# these cover the apex, www, and any preview/deployment hostname the platform
+# generates -- those change on every deploy and cannot be hardcoded.
 ALLOWED_HOSTS = [
-    "aveefoods.in",
-    "www.aveefoods.in",
-    "avee-foods.onrender.com",
+    ".aveefoods.in",
+    ".vercel.app",
+    ".onrender.com",
     "localhost",
     "127.0.0.1",
 ]
 
-# Hosts assign each deployment a generated hostname that cannot be hardcoded
-# because it changes on every deploy (Vercel) or is chosen at service-creation
-# time (Render). Read whichever the current host advertises, plus anything
-# listed in DJANGO_ALLOWED_HOSTS as a comma-separated escape hatch.
+
+# Belt and braces: the platform env vars below are only exposed on some hosts
+# (Vercel gates them behind "Automatically expose System Environment
+# Variables"), so the patterns above are what actually keeps a deploy up.
 for _var in (
     "VERCEL_URL",                    # this deployment, e.g. avee-foods-abc123.vercel.app
     "VERCEL_BRANCH_URL",             # the branch alias
@@ -69,12 +72,20 @@ for _host in os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(","):
     if _host and _host not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append(_host)
 
+
 # The proxy terminates TLS, so POST forms need the https origins trusted.
-# Every allowed host is reachable over https once deployed; localhost is not,
-# and Django rejects a bare hostname here, so build these from the list above.
-CSRF_TRUSTED_ORIGINS = [
-    f"https://{_h}" for _h in ALLOWED_HOSTS if _h not in ("localhost", "127.0.0.1")
-]
+# Django spells a wildcard here as "https://*.example.com" rather than the
+# bare leading dot ALLOWED_HOSTS uses, and a wildcard does not cover the apex,
+# so ".aveefoods.in" has to expand into both forms.
+CSRF_TRUSTED_ORIGINS = []
+for _h in ALLOWED_HOSTS:
+    if _h in ("localhost", "127.0.0.1"):
+        continue
+    if _h.startswith("."):
+        CSRF_TRUSTED_ORIGINS.append(f"https://*{_h}")
+        CSRF_TRUSTED_ORIGINS.append(f"https://{_h.lstrip('.')}")
+    else:
+        CSRF_TRUSTED_ORIGINS.append(f"https://{_h}")
 
 
 if not DEBUG:
