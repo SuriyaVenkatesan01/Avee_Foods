@@ -38,17 +38,19 @@ urlpatterns = [
     path("", include("website.urls")),
 ]
 
-# Serve user uploads (product/gallery images) in every environment.
+# Serve user uploads (product/gallery images) straight off the local disk.
 #
-# WhiteNoise only handles STATIC_ROOT, and django.conf.urls.static.static() is
-# a no-op once DEBUG is off -- so without this, every uploaded image 404s in
-# production. Serving through Django is slower than a real file server, but
-# this storefront's media volume is small and the files live on Render's
-# persistent disk. Move to a CDN/object store if image traffic grows.
-urlpatterns += [
-    re_path(
-        r"^%s(?P<path>.*)$" % settings.MEDIA_URL.lstrip("/"),
-        serve,
-        {"document_root": settings.MEDIA_ROOT},
-    ),
-]
+# Only correct when the files are actually on this machine. With Cloudinary
+# configured, ImageField.url already points at the CDN, so this route would
+# never be hit -- and pointing it at a MEDIA_ROOT that does not exist invites
+# confusing 404s while masking the real URL. WhiteNoise only handles
+# STATIC_ROOT and django.conf.urls.static.static() is a no-op once DEBUG is
+# off, which is why this is spelled out by hand rather than using either.
+if not settings.USE_CLOUDINARY:
+    urlpatterns += [
+        re_path(
+            r"^%s(?P<path>.*)$" % settings.MEDIA_URL.lstrip("/"),
+            serve,
+            {"document_root": settings.MEDIA_ROOT},
+        ),
+    ]

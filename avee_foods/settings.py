@@ -145,6 +145,10 @@ WSGI_APPLICATION = "avee_foods.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# True when running on a platform that gives each request an ephemeral,
+# read-only container. Governs connection pooling and media storage below.
+_SERVERLESS = bool(os.environ.get("VERCEL"))
+
 # sslmode only applies to Postgres -- sqlite rejects it as a connect kwarg.
 _DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
@@ -161,7 +165,12 @@ if _DATABASE_URL or DEBUG:
     DATABASES = {
         "default": dj_database_url.config(
             default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-            conn_max_age=600,
+            # Persistent connections are a liability on a serverless host:
+            # every concurrent invocation is its own process, so a non-zero
+            # value multiplies open connections until Postgres refuses new
+            # ones. Vercel therefore gets 0 (open, use, close) and long-lived
+            # hosts keep the pooling benefit.
+            conn_max_age=0 if _SERVERLESS else 600,
             ssl_require=_DATABASE_URL.startswith(("postgres://", "postgresql://")),
         )
     }
@@ -221,21 +230,50 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # Project-wide static assets (logo, favicons) shared by both apps
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
-# WhiteNoise serves the collected static files under gunicorn
-STORAGES = {
-    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"
-    },
-}
-
 # Media files (User uploads)
-# MEDIA_ROOT is env-configurable so a deployed instance can point it at a
-# persistent disk. Uploads written to an ephemeral container filesystem are
-# lost on every restart and redeploy, so on Render this must match the disk's
-# mount path (see render.yaml).
+# ---------------------------------------------------------------------------
+# Product photos, gallery shots and hero videos are uploaded through the
+# dashboard, so they cannot live in the code bundle. Where they go depends on
+# the host:
+#
+#   Cloudinary  -- set CLOUDINARY_URL. Required on any serverless host, whose
+#                  filesystem is read-only: a local write raises OSError and
+#                  the bundle is size-capped well below this store's media.
+#   Local disk  -- the fallback, for development and for hosts with a real
+#                  mounted volume (DJANGO_MEDIA_ROOT points at the mount).
+_CLOUDINARY_URL = os.environ.get("CLOUDINARY_URL", "").strip()
+USE_CLOUDINARY = bool(_CLOUDINARY_URL)
+
+if USE_CLOUDINARY:
+    # cloudinary configures itself from CLOUDINARY_URL; the credentials never
+    # need to appear in this file.
+    INSTALLED_APPS += ["cloudinary", "cloudinary_storage"]
+    _MEDIA_BACKEND = "avee_foods.storage.MediaStorage"
+else:
+    if _SERVERLESS:
+        warnings.warn(
+            "CLOUDINARY_URL is not set on a serverless host. The filesystem "
+            "is read-only there, so every dashboard image upload will fail "
+            "with OSError and existing uploads will 404 -- they are not in "
+            "the deployment bundle. Set CLOUDINARY_URL in the host's "
+            "environment settings.",
+            RuntimeWarning,
+            stacklevel=1,
+        )
+    _MEDIA_BACKEND = "django.core.files.storage.FileSystemStorage"
+
 MEDIA_URL = "media/"
 MEDIA_ROOT = Path(os.environ.get("DJANGO_MEDIA_ROOT", BASE_DIR / "media"))
+
+
+# WhiteNoise serves the collected static files; see avee_foods/storage.py for
+# why the manifest storage is subclassed rather than used directly.
+STORAGES = {
+    "default": {"BACKEND": _MEDIA_BACKEND},
+    "staticfiles": {
+        "BACKEND": "avee_foods.storage.ForgivingManifestStaticFilesStorage"
+    },
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

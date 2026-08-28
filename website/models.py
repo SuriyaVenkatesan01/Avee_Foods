@@ -11,6 +11,8 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
 
+from avee_foods import storage
+
 # ---------------------------------------------------------------------------
 # Shared validators / helpers
 # ---------------------------------------------------------------------------
@@ -504,8 +506,11 @@ class HomeBanner(models.Model):
         (TYPE_VIDEO, 'Video'),
     ]
 
-    IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif']
-    VIDEO_EXTENSIONS = ['mp4', 'webm', 'ogg', 'mov', 'm4v']
+    # Shared with the media storage backend, which maps the extension to a
+    # Cloudinary resource type. Kept in one place so what may be uploaded and
+    # how it is stored cannot disagree -- see avee_foods/storage.py.
+    IMAGE_EXTENSIONS = storage.IMAGE_EXTENSIONS
+    VIDEO_EXTENSIONS = storage.VIDEO_EXTENSIONS
 
     media_type = models.CharField(max_length=5, choices=TYPE_CHOICES, default=TYPE_IMAGE)
     file = models.FileField(
