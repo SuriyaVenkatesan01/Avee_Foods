@@ -149,22 +149,36 @@ WSGI_APPLICATION = "avee_foods.wsgi.application"
 # read-only container. Governs connection pooling and media storage below.
 _SERVERLESS = bool(os.environ.get("VERCEL"))
 
-# sslmode only applies to Postgres -- sqlite rejects it as a connect kwarg.
-_DATABASE_URL = os.environ.get("DATABASE_URL", "")
+# Resolve the Postgres connection string. DJANGO_DATABASE_URL/DATABASE_URL
+# wins if you ever set it explicitly (e.g. pointing at a different provider),
+# but when using the Vercel <-> Supabase integration those aren't set --
+# Vercel injects the POSTGRES_* variables instead. POSTGRES_URL_NON_POOLING
+# is preferred over POSTGRES_URL/POSTGRES_PRISMA_URL: those go through
+# Supabase's pgbouncer in transaction-pooling mode, which Django's ORM can
+# fight with over prepared statements. conn_max_age=0 below (one connection
+# per request on serverless) means we don't need pgbouncer's pooling anyway.
+_DATABASE_URL = (
+    os.environ.get("DATABASE_URL", "").strip()
+    or os.environ.get("POSTGRES_URL_NON_POOLING", "").strip()
+    or os.environ.get("POSTGRES_URL", "").strip()
+)
 
 _MISSING_DATABASE_URL = (
-    "DATABASE_URL is not set. A deployed instance needs a Postgres URL; the "
-    "sqlite fallback only exists for local development. Set DATABASE_URL in "
-    "the host's environment settings, for every environment the deploy runs "
-    "in. For a local run, create a .env file containing DJANGO_DEBUG=1 "
-    "(see .env.example)."
+    "No database URL found. Set DATABASE_URL (or, on Vercel with the "
+    "Supabase integration, POSTGRES_URL_NON_POOLING) in the host's "
+    "environment settings, for every environment the deploy runs in. For a "
+    "local run, create a .env file containing DJANGO_DEBUG=1 (see "
+    ".env.example)."
 )
 
 if _DATABASE_URL or DEBUG:
-    # Postgres in production, sqlite locally.
+    # Postgres in production, sqlite locally. dj_database_url.parse() is used
+    # (rather than .config(), which reads os.environ["DATABASE_URL"] itself)
+    # because _DATABASE_URL above may have come from a POSTGRES_* fallback
+    # instead of DATABASE_URL.
     DATABASES = {
-        "default": dj_database_url.config(
-            default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        "default": dj_database_url.parse(
+            _DATABASE_URL or f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
             # Persistent connections are a liability on a serverless host:
             # every concurrent invocation is its own process, so a non-zero
             # value multiplies open connections until Postgres refuses new
